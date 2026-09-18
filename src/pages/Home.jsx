@@ -1,162 +1,55 @@
-import React, { useEffect, useMemo, useState } from "react";
-import Header from "../components/Header";
-import ProviderFilter from "../components/ProviderFilter";
-import PriceFilter from "../components/PriceFilter";
-import { PRICE_RANGES } from "../constants/priceRanges";
-import ProductCard from "../components/ProductCard";
-import { MOCK_PRODUCTS } from "../utils/mockProducts";
+import React from 'react';
+import { ShieldCheck, Layers, Zap } from 'lucide-react';
+import AddressSearchBar from '@/components/AddressSearchBar';
+import NetworkTicker from '@/components/home/NetworkTicker';
+import FeaturedDeals from '@/components/home/FeaturedDeals';
+import HowItWorks from '@/components/home/HowItWorks';
+import SpeedCalculator from '@/components/home/SpeedCalculator';
+import ConnectivityMatrix from '@/components/home/ConnectivityMatrix';
+import ProvidersStrip from '@/components/home/ProvidersStrip';
+import PopularLocations from '@/components/home/PopularLocations';
+import FaqSection from '@/components/home/FaqSection';
+import FinalCta from '@/components/home/FinalCta';
 
 export default function Home() {
-  const [loading, setLoading] = useState(true);
-  const [campaignName, _setCampaignName] = useState("FREE setup + router"); // unused setter
-  const [products, setProducts] = useState([]);
-  const [error, _setError] = useState(""); // unused setter
-
-  // filters
-  const [selectedProviders, setSelectedProviders] = useState([]);
-  const [selectedPriceKeys, setSelectedPriceKeys] = useState([]);
-  const [speedMenuOpen, setSpeedMenuOpen] = useState(false);
-  const [selectedSpeeds, setSelectedSpeeds] = useState([]);
-
-  // Load mock products on mount
-  useEffect(() => {
-    setProducts(MOCK_PRODUCTS);
-    setLoading(false);
-  }, []);
-
-  const providers = useMemo(
-    () => Array.from(new Set(products.map((p) => p.provider))).sort(),
-    [products]
-  );
-
-  const speedBuckets = useMemo(() => {
-    const speeds = Array.from(
-      new Set(
-        products
-          .map((p) => p.download)
-          .filter(Boolean)
-          .map((n) =>
-            n <= 20 ? "≤20Mbps" : n <= 50 ? "≤50Mbps" : n <= 100 ? "≤100Mbps" : "≥200Mbps"
-          )
-      )
-    );
-    const order = ["≤20Mbps", "≤50Mbps", "≤100Mbps", "≥200Mbps"];
-    return speeds.sort((a, b) => order.indexOf(a) - order.indexOf(b));
-  }, [products]);
-
-  const onToggleProvider = (name) =>
-    setSelectedProviders((prev) =>
-      prev.includes(name) ? prev.filter((p) => p !== name) : [...prev, name]
-    );
-
-  const onTogglePrice = (key) =>
-    setSelectedPriceKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
-
-  const onToggleSpeed = (label) =>
-    setSelectedSpeeds((prev) =>
-      prev.includes(label) ? prev.filter((s) => s !== label) : [...prev, label]
-    );
-
-  const priceFilters = PRICE_RANGES.filter((r) => selectedPriceKeys.includes(r.key));
-
-  const filtered = products.filter((p) => {
-    const providerOk = selectedProviders.length === 0 || selectedProviders.includes(p.provider);
-
-    const priceOk =
-      priceFilters.length === 0 ||
-      priceFilters.some((r) => p.price >= r.min && p.price <= r.max);
-
-    const speedOk =
-      selectedSpeeds.length === 0 ||
-      selectedSpeeds.some((label) =>
-        label === "≤20Mbps"
-          ? (p.download || 0) <= 20
-          : label === "≤50Mbps"
-          ? (p.download || 0) <= 50
-          : label === "≤100Mbps"
-          ? (p.download || 0) <= 100
-          : (p.download || 0) >= 200
-      );
-
-    return providerOk && priceOk && speedOk;
-  });
-
   return (
-    <div className="container">
-      <Header />
-
-      <ProviderFilter
-        providers={providers}
-        selected={selectedProviders}
-        onToggle={onToggleProvider}
-      />
-
-      <div className="toolbar">
-        <div className="filters">
-          <div className="dropdown">
-            <button onClick={() => setSpeedMenuOpen((v) => !v)}>
-              <span>Speed</span>
-              <span aria-hidden>▾</span>
-            </button>
-            {speedMenuOpen && (
-              <div className="menu" role="menu" aria-label="Speed">
-                {speedBuckets.length === 0 && (
-                  <div className="subtle" style={{ padding: "6px 10px" }}>
-                    No speeds found yet
-                  </div>
-                )}
-                {speedBuckets.map((label) => (
-                  <label key={label}>
-                    <input
-                      type="checkbox"
-                      checked={selectedSpeeds.includes(label)}
-                      onChange={() => onToggleSpeed(label)}
-                    />
-                    <span>{label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
+    <>
+      {/* Hero */}
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-brand/5 to-background">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 lg:grid-cols-[1fr_320px] lg:py-20">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
+              <Zap className="h-3.5 w-3.5" /> Compare multiple providers in one place
+            </span>
+            <h1 className="mt-4 text-3xl font-extrabold leading-[1.3] tracking-tight text-balance sm:text-4xl lg:text-[4.5rem] lg:leading-[1.2]">
+              Find the right internet package for your address
+            </h1>
+            <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
+              Compare fibre, LTE and 5G packages available in your area across South African networks and service providers.
+            </p>
+            <div className="mt-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
+              <AddressSearchBar />
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-success" /> POPIA-aware privacy</span>
+              <span className="inline-flex items-center gap-1.5"><Layers className="h-4 w-4 text-brand" /> Fibre · 5G · LTE</span>
+              <span className="inline-flex items-center gap-1.5"><Zap className="h-4 w-4 text-warning" /> Fast coverage check</span>
+            </div>
           </div>
-
-          <PriceFilter selectedKeys={selectedPriceKeys} onToggle={onTogglePrice} />
+          <aside className="lg:pt-16">
+            <NetworkTicker />
+          </aside>
         </div>
+      </section>
 
-        <button className="deal-type">{campaignName || "Deal"}</button>
-      </div>
-
-      {error && (
-        <div
-          style={{
-            border: "1px solid #fecaca",
-            background: "#fef2f2",
-            color: "#991b1b",
-            padding: 12,
-            borderRadius: 8,
-            marginBottom: 12,
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="grid">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="card" style={{ height: 140, opacity: 0.6 }} />
-          ))}
-        </div>
-      ) : (
-        <div className="grid">
-          {filtered.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      )}
-
-      <div className="footer">MWEB Fibre Product Browser © {new Date().getFullYear()}</div>
-    </div>
+      <FeaturedDeals />
+      <HowItWorks />
+      <SpeedCalculator />
+      <ConnectivityMatrix />
+      <ProvidersStrip />
+      <PopularLocations />
+      <FaqSection />
+      <FinalCta />
+    </>
   );
 }

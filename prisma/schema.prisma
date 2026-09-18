@@ -1,0 +1,403 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+  SUPPORT
+  SALES
+  CONTENT_EDITOR
+  ANALYST
+  PROVIDER_MANAGER
+}
+
+enum AccountStatus {
+  ACTIVE
+  UNVERIFIED
+  SUSPENDED
+  DISABLED
+}
+
+enum AuthTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+enum ConnectivityType {
+  FIBRE
+  LTE
+  FIVE_G
+}
+
+enum CoverageResultType {
+  FIBRE
+  WIRELESS
+  NONE
+}
+
+enum EnquiryStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  PROVIDER_CONTACTED
+  AWAITING_CUSTOMER
+  APPROVED
+  INSTALLATION_SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id                 String                   @id @default(uuid()) @db.Uuid
+  email              String                   @unique
+  passwordHash       String?
+  firstName          String?
+  lastName           String?
+  phone              String?
+  role               UserRole                 @default(USER)
+  status             AccountStatus            @default(UNVERIFIED)
+  emailVerifiedAt    DateTime?
+  lastLoginAt        DateTime?
+  marketingConsent   Boolean                  @default(false)
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  addresses          UserAddress[]
+  savedPackages      SavedPackage[]
+  comparisons        Comparison[]
+  coverageSearches   CoverageSearch[]
+  enquiries          Enquiry[]                @relation("CustomerEnquiries")
+  assignedEnquiries  Enquiry[]                @relation("AssignedEnquiries")
+  notificationPrefs  NotificationPreference?
+  auditLogs          AuditLog[]
+  sessions           AuthSession[]
+  authTokens         AuthToken[]
+}
+
+model AuthSession {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @db.Uuid
+  tokenHash     String    @unique
+  csrfTokenHash String
+  expiresAt     DateTime
+  lastSeenAt    DateTime  @default(now())
+  revokedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt, expiresAt])
+  @@index([expiresAt])
+}
+
+model AuthToken {
+  id        String        @id @default(uuid()) @db.Uuid
+  userId    String        @db.Uuid
+  type      AuthTokenType
+  tokenHash String        @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, usedAt, expiresAt])
+  @@index([expiresAt])
+}
+
+model UserAddress {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  street     String
+  suburb     String
+  city       String
+  province   String
+  postalCode String?
+  preferred  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Provider {
+  id           String             @id @default(uuid()) @db.Uuid
+  slug         String             @unique
+  name         String
+  logoText     String?
+  color        String?
+  description  String
+  connectivity ConnectivityType[]
+  rating       Decimal?           @db.Decimal(2, 1)
+  reviewCount  Int                @default(0)
+  active       Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  packages     BroadbandPackage[]
+  ratings      ProviderRating[]
+}
+
+model NetworkOperator {
+  id                 String             @id @default(uuid()) @db.Uuid
+  slug               String             @unique
+  name               String
+  logoText           String?
+  color              String?
+  infrastructure     String
+  description        String
+  supportedProviders String[]
+  coverageLocations  String[]
+  active             Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  packages           BroadbandPackage[]
+  coverageAreas      CoverageArea[]
+}
+
+model BroadbandPackage {
+  id                 String                @id @default(uuid()) @db.Uuid
+  slug               String                @unique
+  providerId         String                @db.Uuid
+  networkId          String                @db.Uuid
+  name               String
+  connectivityType   ConnectivityType
+  downloadMbps       Int
+  uploadMbps         Int
+  monthlyPrice       Decimal               @db.Decimal(10, 2)
+  promotionalPrice   Decimal?              @db.Decimal(10, 2)
+  promotionStart     DateTime?
+  promotionEnd       DateTime?
+  installationFee    Decimal               @default(0) @db.Decimal(10, 2)
+  routerFee          Decimal               @default(0) @db.Decimal(10, 2)
+  routerIncluded     Boolean               @default(false)
+  contractMonths     Int                   @default(0)
+  uncapped           Boolean               @default(true)
+  dataAllowanceGb    Int?
+  fairUsagePolicy    String?
+  activationEstimate String?
+  residential        Boolean               @default(true)
+  business           Boolean               @default(false)
+  featured           Boolean               @default(false)
+  recommended        Boolean               @default(false)
+  bestValue          Boolean               @default(false)
+  mostPopular        Boolean               @default(false)
+  active             Boolean               @default(true)
+  description        String
+  extras             String[]
+  bestUseCase        String?
+  rating             Decimal?              @db.Decimal(2, 1)
+  reviewCount        Int                   @default(0)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  provider           Provider              @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  network            NetworkOperator       @relation(fields: [networkId], references: [id], onDelete: Restrict)
+  promotions         Promotion[]
+  availability       PackageAvailability[]
+  savedBy            SavedPackage[]
+  comparisonItems    ComparisonItem[]
+  enquiries          Enquiry[]
+
+  @@index([providerId, active])
+  @@index([networkId, active])
+  @@index([connectivityType, active])
+  @@index([monthlyPrice])
+  @@index([downloadMbps])
+}
+
+model Promotion {
+  id        String           @id @default(uuid()) @db.Uuid
+  packageId String           @db.Uuid
+  price     Decimal          @db.Decimal(10, 2)
+  startsAt  DateTime
+  endsAt    DateTime
+  active    Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  package   BroadbandPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([packageId, active, startsAt, endsAt])
+}
+
+model CoverageArea {
+  id           String                @id @default(uuid()) @db.Uuid
+  networkId    String                @db.Uuid
+  province     String
+  city         String
+  suburb       String
+  postalCode   String?
+  status       String                @default("available")
+  source       String                @default("DEMO")
+  lastVerifiedAt DateTime?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  network      NetworkOperator       @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  availability PackageAvailability[]
+
+  @@unique([networkId, province, city, suburb])
+  @@index([province, city, suburb])
+  @@index([status, source])
+}
+
+model PackageAvailability {
+  id             String           @id @default(uuid()) @db.Uuid
+  packageId      String           @db.Uuid
+  coverageAreaId String           @db.Uuid
+  available      Boolean          @default(true)
+  package        BroadbandPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  coverageArea   CoverageArea     @relation(fields: [coverageAreaId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, coverageAreaId])
+  @@index([coverageAreaId, available])
+}
+
+model SavedPackage {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  packageId String           @db.Uuid
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package   BroadbandPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, packageId])
+}
+
+model Comparison {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  name      String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     ComparisonItem[]
+
+  @@index([userId, createdAt])
+}
+
+model ComparisonItem {
+  comparisonId String           @db.Uuid
+  packageId    String           @db.Uuid
+  position     Int
+  comparison   Comparison       @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  package      BroadbandPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@id([comparisonId, packageId])
+  @@unique([comparisonId, position])
+}
+
+model CoverageSearch {
+  id         String             @id @default(uuid()) @db.Uuid
+  userId     String?            @db.Uuid
+  address    Json
+  resultType CoverageResultType
+  suburb     String?
+  city       String?
+  province   String?
+  postalCode String?
+  latitude   Decimal?           @db.Decimal(9, 6)
+  longitude  Decimal?           @db.Decimal(9, 6)
+  resultStatus String            @default("UNKNOWN")
+  networksFound Int              @default(0)
+  packagesFound Int              @default(0)
+  source       String            @default("DEMO")
+  createdAt  DateTime           @default(now())
+  user       User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([createdAt, source])
+}
+
+model Enquiry {
+  id                      String                 @id @default(uuid()) @db.Uuid
+  reference               String                 @unique
+  userId                  String?                @db.Uuid
+  packageId               String                 @db.Uuid
+  assignedToId            String?                @db.Uuid
+  address                  Json
+  firstName                String
+  lastName                 String
+  email                    String
+  phone                    String
+  contactMethod            String
+  propertyType             String
+  dwelling                 String
+  unit                     String?
+  accessNotes              String?
+  landlordAcknowledged     Boolean                @default(false)
+  privacyConsentAt         DateTime
+  termsConsentAt           DateTime
+  providerContactConsentAt DateTime
+  marketingConsentAt       DateTime?
+  status                   EnquiryStatus          @default(SUBMITTED)
+  deduplicationKey         String
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  user                     User?                  @relation("CustomerEnquiries", fields: [userId], references: [id], onDelete: SetNull)
+  package                  BroadbandPackage       @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  assignedTo               User?                  @relation("AssignedEnquiries", fields: [assignedToId], references: [id], onDelete: SetNull)
+  history                  EnquiryStatusHistory[]
+
+  @@index([userId, createdAt])
+  @@index([email, createdAt])
+  @@index([status, createdAt])
+  @@index([deduplicationKey, createdAt])
+}
+
+model EnquiryStatusHistory {
+  id          String        @id @default(uuid()) @db.Uuid
+  enquiryId   String        @db.Uuid
+  status      EnquiryStatus
+  note        String?
+  createdById String?       @db.Uuid
+  createdAt   DateTime      @default(now())
+  enquiry     Enquiry       @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+
+  @@index([enquiryId, createdAt])
+}
+
+model NotificationPreference {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid
+  email     Boolean  @default(true)
+  sms       Boolean  @default(false)
+  push      Boolean  @default(false)
+  marketing Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ProviderRating {
+  id         String   @id @default(uuid()) @db.Uuid
+  providerId String   @db.Uuid
+  userId     String   @db.Uuid
+  rating     Int
+  review     String?
+  createdAt  DateTime @default(now())
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, userId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @db.Uuid
+  action     String
+  targetType String
+  targetId   String?
+  requestId  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
+}
+
+model AppSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
