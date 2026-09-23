@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Pencil, Tag, FileEdit, BarChart3, Settings as SettingsIcon, MapPin, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Badge from '@/components/ui/Badge';
+import Badge from '@/components/ui/badge';
 import NetworkLogo from '@/components/ui/NetworkLogo';
 import { NETWORKS, SUBURBS, CITIES, FAQS, PACKAGES } from '@/data/mockData';
 import { storage, KEYS } from '@/services/storageService';

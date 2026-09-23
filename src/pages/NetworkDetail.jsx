@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import Badge from '@/components/ui/Badge';
+import Badge from '@/components/ui/badge';
 import PackageCard from '@/components/PackageCard';
 import ProviderLogo from '@/components/ui/ProviderLogo';
 import NetworkLogo from '@/components/ui/NetworkLogo';

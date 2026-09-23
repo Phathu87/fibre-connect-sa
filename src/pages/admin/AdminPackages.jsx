@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Search, Pencil, Copy, Power, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Badge from '@/components/ui/Badge';
+import Badge from '@/components/ui/badge';
 import ProviderLogo from '@/components/ui/ProviderLogo';
 import { PACKAGES, PROVIDERS, NETWORKS, getProvider } from '@/data/mockData';
 

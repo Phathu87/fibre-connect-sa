@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, GitCompare, ArrowRight, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Badge from '@/components/ui/Badge';
+import Badge from '@/components/ui/badge';
 import { SpeedBadge } from '@/components/ui/Connectivity';
 import ProviderLogo from '@/components/ui/ProviderLogo';
 import NetworkLogo from '@/components/ui/NetworkLogo';

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, ArrowRight } from 'lucide-react';
 import ProviderLogo from '@/components/ui/ProviderLogo';
-import Badge from '@/components/ui/Badge';
+import Badge from '@/components/ui/badge';
 import { providerService } from '@/services/providerService';
 
 export default function Providers() {

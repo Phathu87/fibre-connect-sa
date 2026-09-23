@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Search, Pencil, Power, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ProviderLogo from '@/components/ui/ProviderLogo';
-import Badge from '@/components/ui/Badge';
+import Badge from '@/components/ui/badge';
 import { PROVIDERS } from '@/data/mockData';
 
 export default function AdminProviders() {

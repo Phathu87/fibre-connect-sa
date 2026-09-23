@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Heart, GitCompare, ShieldCheck, Clock, Router, FileText, ChevronDown, ArrowRight, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Badge from '@/components/ui/Badge';
+import Badge from '@/components/ui/badge';
 import { ConnectivityIcon } from '@/components/ui/Connectivity';
 import ProviderLogo from '@/components/ui/ProviderLogo';
 import PackageCard from '@/components/PackageCard';

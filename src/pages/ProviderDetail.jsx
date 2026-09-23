@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Package, Check } from 'lucide-react';
 import ProviderLogo from '@/components/ui/ProviderLogo';
-import Badge from '@/components/ui/Badge';
+import Badge from '@/components/ui/badge';
 import PackageCard from '@/components/PackageCard';
 import { providerService } from '@/services/providerService';
 import { events } from '@/services/analyticsService';

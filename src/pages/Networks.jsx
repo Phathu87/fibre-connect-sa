@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import Badge from '@/components/ui/Badge';
+import Badge from '@/components/ui/badge';
 import NetworkLogo from '@/components/ui/NetworkLogo';
 import { networkService } from '@/services/networkService';
 
