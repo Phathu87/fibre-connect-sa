@@ -19,6 +19,11 @@ Date: 2026-09-18
 | Rate limiting | Per-route limits on registration, login, verification and reset | PASS |
 | Database exposure | RLS enabled; no browser-role Data API policies | PASS |
 | Secret examples | `.env.example` contains placeholders only | PASS |
+| Log redaction | Authorization, cookies, password and token paths redacted by Pino | PASS |
+| Bot boundary | Configured public mutations require server-validated Turnstile token | PASS |
+| Data export | Explicit allowlist excludes password/session/token/audit internals | PASS |
+| Account deletion | Password + CSRF required; enquiry PII anonymized transactionally | PASS |
+| Audit visibility | Ordinary user denied; `audit.read` administrator allowed | PASS |
 
 ## Advisor Results
 
@@ -28,11 +33,12 @@ Performance Advisor reports four pre-existing foreign keys without covering inde
 
 ## Dependency Result
 
-`npm audit fix` without `--force` reduced the report from 17 to 8 advisories: 2 low, 2 moderate and 4 high. Remaining high findings are Prisma CLI/configuration chains, including unused MySQL tooling; remediation currently proposes an incompatible Prisma major downgrade. Remaining browser/editor findings require major upgrades. No forced breaking remediation was applied.
+The live 2026-09-23 `npm audit` reports 8 advisories: 2 low, 2 moderate, 4 high and 0 critical. Remaining high findings are Prisma CLI/configuration chains, including unused MySQL tooling; remediation currently proposes an incompatible Prisma major downgrade. The React Router findings require a major upgrade; FibreConnect's authentication return path already enforces same-origin URLs, rejects protocol-relative/backslash forms and strips authentication-shaped parameters. The Quill finding applies to HTML export functionality that FibreConnect does not expose. No forced breaking remediation was applied.
 
 ## Release Blockers
 
 - Configure production transactional email and verify deliverability, templates and link handling.
 - Configure production bot protection and validate rate-limit storage for a multi-instance deployment.
+- Connect the active GitHub repository to Netlify and configure its production environment; both historical MWEB Netlify addresses now return `Site not found`.
 - Rotate the previously exposed Supabase secret key before production.
 - Re-run dependency audit and complete controlled major-version remediation before release sign-off.

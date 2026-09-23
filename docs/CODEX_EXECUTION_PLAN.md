@@ -212,7 +212,7 @@ Execution evidence:
 
 ## WP6 - Security, Privacy and Observability
 
-Status: NOT STARTED
+Status: COMPLETE
 
 Objective: Implement rate limits, bot protection hooks, headers, audit logging, privacy controls, data export/deletion, structured logs, health checks and monitoring adapters.
 
@@ -229,6 +229,16 @@ Security impact: High.
 Tests required: unauthorized access attempts, repeated submissions, invalid input, unsafe redirect and PII leakage checks.
 
 Completion criteria: `docs/SECURITY_VALIDATION.md` and privacy inventory are evidence-backed by actual checks.
+
+Execution evidence:
+
+- Added Pino redaction for authorization, cookies, response cookies, passwords and token-bearing request fields while preserving request IDs and structured operational errors.
+- Added an optional Cloudflare Turnstile server adapter for registration, login, password-reset requests and enquiries. It is inert without a secret and fails closed when configured; production widget/secret activation remains an external configuration gate.
+- Added authenticated personal-data export and password-confirmed account erasure. Account-owned records cascade-delete while retained enquiries are unlinked and identifying fields are anonymized in the same transaction.
+- Added permission-protected, cursor-ready audit-log API/UI. Ordinary users receive 403; authorized administrators can inspect server-recorded privileged events.
+- Removed the admin role simulation and the final profile notification-preference `localStorage` path.
+- The eight-test live Supabase suite proves export safety, audit authorization, invalid-password denial, deletion, anonymization and retained deletion evidence. The 22-test local suite proves bot enforcement when configured and existing security boundaries.
+- Full privacy inventory and validation evidence are recorded in `docs/WP6_SECURITY_PRIVACY_OBSERVABILITY.md` and `docs/SECURITY_VALIDATION.md`.
 
 ## WP7 - CI/CD and Release Documentation
 

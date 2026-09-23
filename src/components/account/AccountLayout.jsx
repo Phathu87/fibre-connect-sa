@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { User, MapPin, Heart, GitCompare, FileText, Bell, LayoutDashboard } from 'lucide-react';
+import { User, MapPin, Heart, GitCompare, FileText, Bell, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -12,6 +12,7 @@ const NAV = [
   { to: '/account/comparisons', label: 'Comparisons', icon: GitCompare },
   { to: '/account/enquiries', label: 'Enquiries', icon: FileText },
   { to: '/account/notifications', label: 'Notifications', icon: Bell },
+  { to: '/account/privacy', label: 'Privacy', icon: ShieldCheck },
 ];
 
 export default function AccountLayout() {

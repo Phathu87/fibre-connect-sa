@@ -271,6 +271,56 @@ describe("Supabase PostgreSQL integration", () => {
       await database.user.deleteMany({ where: { email: { in: [customerEmail, otherEmail, adminEmail] } } });
     }
   }, 90_000);
+
+  it("exports owned data, restricts audit access, and erases an account safely", async () => {
+    const env = loadEnv();
+    const database = getDatabase(env.DATABASE_URL);
+    const app = createApp(env);
+    const marker = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const userEmail = `wp6-user-${marker}@example.test`;
+    const adminEmail = `wp6-admin-${marker}@example.test`;
+    const password = "Production-ready password 42";
+    let enquiryId: string | undefined;
+
+    try {
+      const user = await app.inject({ method: "POST", url: "/api/auth/register", payload: { email: userEmail, password, firstName: "Privacy", lastName: "User" } });
+      const admin = await app.inject({ method: "POST", url: "/api/auth/register", payload: { email: adminEmail, password, firstName: "Audit", lastName: "Admin" } });
+      expect([user.statusCode, admin.statusCode]).toEqual([200, 200]);
+      const userId = user.json().user.id as string;
+      const adminId = admin.json().user.id as string;
+      await database.user.update({ where: { id: adminId }, data: { role: "ADMIN" } });
+      const broadbandPackage = await database.broadbandPackage.findFirstOrThrow({ where: { active: true } });
+      const createdEnquiry = await database.enquiry.create({ data: { reference: `WP6-${marker}`, userId, packageId: broadbandPackage.id, address: { street: "Private Street", city: "Johannesburg" }, firstName: "Privacy", lastName: "User", email: userEmail, phone: "0821234567", contactMethod: "Email", propertyType: "Residential", dwelling: "House", landlordAcknowledged: true, privacyConsentAt: new Date(), termsConsentAt: new Date(), providerContactConsentAt: new Date(), deduplicationKey: marker } });
+      enquiryId = createdEnquiry.id;
+
+      const userCookie = cookieHeader(user.headers["set-cookie"]);
+      const exported = await app.inject({ method: "GET", url: "/api/me/data-export", headers: { cookie: userCookie } });
+      expect(exported.statusCode).toBe(200);
+      expect(exported.json().data).toMatchObject({ email: userEmail, enquiries: [{ reference: `WP6-${marker}` }] });
+      expect(exported.body).not.toContain("passwordHash");
+      expect(exported.body).not.toContain("tokenHash");
+
+      const forbiddenAudit = await app.inject({ method: "GET", url: "/api/admin/audit-logs", headers: { cookie: userCookie } });
+      expect(forbiddenAudit.statusCode).toBe(403);
+      const allowedAudit = await app.inject({ method: "GET", url: "/api/admin/audit-logs", headers: { cookie: cookieHeader(admin.headers["set-cookie"]) } });
+      expect(allowedAudit.statusCode).toBe(200);
+
+      const wrongPassword = await app.inject({ method: "DELETE", url: "/api/me/account", headers: mutationHeaders(user.headers["set-cookie"]), payload: { password: "incorrect password" } });
+      expect(wrongPassword.statusCode).toBe(401);
+      expect(await database.user.findUnique({ where: { id: userId } })).not.toBeNull();
+      const deleted = await app.inject({ method: "DELETE", url: "/api/me/account", headers: mutationHeaders(user.headers["set-cookie"]), payload: { password } });
+      expect(deleted.statusCode).toBe(200);
+      expect(await database.user.findUnique({ where: { id: userId } })).toBeNull();
+      const anonymized = await database.enquiry.findUniqueOrThrow({ where: { id: createdEnquiry.id } });
+      expect(anonymized).toMatchObject({ userId: null, firstName: "Deleted", lastName: "User", phone: "REDACTED" });
+      expect(JSON.stringify(anonymized.address)).not.toContain("Private Street");
+      expect(await database.auditLog.findFirst({ where: { targetId: userId, action: "privacy.account.deleted" } })).not.toBeNull();
+    } finally {
+      await app.close();
+      if (enquiryId) await database.enquiry.deleteMany({ where: { id: enquiryId } });
+      await database.user.deleteMany({ where: { email: { in: [userEmail, adminEmail] } } });
+    }
+  }, 90_000);
 });
 
 function cookieHeader(setCookie: string | string[] | undefined) {

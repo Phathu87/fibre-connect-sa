@@ -5,6 +5,8 @@ const booleanString = z
   .default("false")
   .transform((value) => value === "true");
 
+const optionalSecret = z.preprocess((value) => value === "" ? undefined : value, z.string().min(1).optional());
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   HOST: z.string().min(1).default("127.0.0.1"),
@@ -16,6 +18,7 @@ const envSchema = z.object({
   TRUST_PROXY: booleanString,
   SESSION_COOKIE_NAME: z.string().min(1).default("fc_session"),
   SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(720).default(168),
+  BOT_PROTECTION_SECRET: optionalSecret,
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

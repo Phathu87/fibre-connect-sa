@@ -12,6 +12,6 @@
     "types": ["node", "vitest/globals"],
     "outDir": ".server-dist"
   },
-  "include": ["server/**/*.ts", "prisma/**/*.ts", "prisma.config.ts", "tests/**/*.ts"],
+  "include": ["server/**/*.ts", "netlify/functions/**/*.ts", "prisma/**/*.ts", "prisma.config.ts", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist", ".server-dist"]
 }

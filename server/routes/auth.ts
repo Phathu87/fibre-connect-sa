@@ -8,6 +8,7 @@ import { getDatabase } from "../db/client.js";
 import { AppError } from "../lib/errors.js";
 import { createAuthRepository } from "../repositories/auth.js";
 import { AuthService } from "../services/auth.js";
+import { createBotProtection } from "../security/botProtection.js";
 
 const email = z.string().trim().email().max(254);
 const password = z.string().min(12).max(128);
@@ -24,14 +25,16 @@ export async function registerAuthRoutes(app: FastifyInstance, env: AppEnv) {
   const delivery = env.NODE_ENV === "production" ? new UnconfiguredProductionAuthDelivery() : new DevelopmentAuthDelivery();
   const service = new AuthService(repository, delivery, env.SESSION_TTL_HOURS, env.NODE_ENV !== "production");
   const auth = createAuthMiddleware(repository, env);
+  const verifyBot = createBotProtection(env);
   const rateLimit = (max: number) => ({ config: { rateLimit: { max, timeWindow: "1 minute" } } });
+  const publicProtection = (max: number) => ({ ...rateLimit(max), preHandler: verifyBot });
 
-  app.post("/api/auth/register", rateLimit(5), async (request, reply) => {
+  app.post("/api/auth/register", publicProtection(5), async (request, reply) => {
     const result = await service.register(registerBody.parse(request.body));
     setSessionCookies(reply, env, result.session);
     return { user: result.user, ...(result.developmentVerificationToken ? { developmentVerificationToken: result.developmentVerificationToken } : {}) };
   });
-  app.post("/api/auth/login", rateLimit(8), async (request, reply) => {
+  app.post("/api/auth/login", publicProtection(8), async (request, reply) => {
     const body = loginBody.parse(request.body);
     const result = await service.login(body.email, body.password);
     setSessionCookies(reply, env, result.session);
@@ -44,7 +47,7 @@ export async function registerAuthRoutes(app: FastifyInstance, env: AppEnv) {
   });
   app.get("/api/me", { preHandler: auth.authenticate }, async (request) => ({ user: request.auth!.user }));
   app.patch("/api/me", { preHandler: [auth.authenticate, auth.requireCsrf] }, async (request) => ({ user: await repository.updateProfile(request.auth!.user.id, profileBody.parse(request.body)) }));
-  app.post("/api/auth/forgot-password", rateLimit(5), async (request) => ({ accepted: true, ...await service.forgotPassword(z.object({ email }).parse(request.body).email) }));
+  app.post("/api/auth/forgot-password", publicProtection(5), async (request) => ({ accepted: true, ...await service.forgotPassword(z.object({ email }).parse(request.body).email) }));
   app.post("/api/auth/reset-password", rateLimit(5), async (request) => { const body = z.object({ token, password }).parse(request.body); await service.resetPassword(body.token, body.password); return { success: true }; });
   app.post("/api/auth/verify-email", rateLimit(10), async (request) => ({ user: await service.verifyEmail(z.object({ token }).parse(request.body).token) }));
   app.post("/api/auth/resend-verification", { preHandler: [auth.authenticate, auth.requireCsrf], ...rateLimit(3) }, async (request) => ({ accepted: true, ...await service.resendVerification(request.auth!.user.id, request.auth!.user.email) }));

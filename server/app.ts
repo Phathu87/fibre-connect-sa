@@ -13,10 +13,17 @@ import { registerCatalogueRoutes } from "./routes/catalogue.js";
 import { registerCoverageRoutes } from "./routes/coverage.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerUserDataRoutes } from "./routes/userData.js";
+import { registerPrivacyRoutes } from "./routes/privacy.js";
 
 export function createApp(env: AppEnv) {
   const app = Fastify({
-    logger: { level: env.LOG_LEVEL },
+    logger: {
+      level: env.LOG_LEVEL,
+      redact: {
+        paths: ["req.headers.authorization", "req.headers.cookie", "res.headers.set-cookie", "req.body.password", "req.body.token", "req.body.resetToken"],
+        censor: "[REDACTED]",
+      },
+    },
     genReqId: () => randomUUID(),
     trustProxy: env.TRUST_PROXY,
     requestIdHeader: "x-request-id",
@@ -58,6 +65,7 @@ export function createApp(env: AppEnv) {
   app.register(registerCoverageRoutes, env);
   app.register(registerAuthRoutes, env);
   app.register(registerUserDataRoutes, env);
+  app.register(registerPrivacyRoutes, env);
 
   app.setNotFoundHandler((request, reply) => {
     reply.code(404).send(errorEnvelope("not_found", "Resource not found", request.id));

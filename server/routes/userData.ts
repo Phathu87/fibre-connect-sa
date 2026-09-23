@@ -8,6 +8,7 @@ import { getDatabase } from "../db/client.js";
 import { AppError } from "../lib/errors.js";
 import { createAuthRepository } from "../repositories/auth.js";
 import { createUserDataRepository } from "../repositories/userData.js";
+import { createBotProtection } from "../security/botProtection.js";
 
 const uuid = z.string().uuid();
 const address = z.object({ street: z.string().trim().min(1).max(160), suburb: z.string().trim().min(1).max(100), city: z.string().trim().min(1).max(100), province: z.string().trim().min(1).max(100), postalCode: z.string().trim().regex(/^\d{4}$/).optional() }).strict();
@@ -27,6 +28,7 @@ export async function registerUserDataRoutes(app: FastifyInstance, env: AppEnv) 
   const authRepository = createAuthRepository(database);
   const repository = createUserDataRepository(database);
   const auth = createAuthMiddleware(authRepository, env);
+  const verifyBot = createBotProtection(env);
   const protectedMutation = { preHandler: [auth.authenticate, auth.requireCsrf] };
 
   app.get("/api/me/addresses", { preHandler: auth.authenticate }, async (request) => ({ items: await repository.listAddresses(request.auth!.user.id) }));
@@ -47,7 +49,7 @@ export async function registerUserDataRoutes(app: FastifyInstance, env: AppEnv) 
   app.put("/api/me/notification-preferences", protectedMutation, async (request) => ({ preferences: await repository.setPreferences(request.auth!.user.id, preference.parse(request.body)) }));
   app.get("/api/me/enquiries", { preHandler: auth.authenticate }, async (request) => ({ items: serializeEnquiries(await repository.listUserEnquiries(request.auth!.user.id)) }));
 
-  app.post("/api/enquiries", { config: { rateLimit: { max: 5, timeWindow: "10 minutes" } } }, async (request) => {
+  app.post("/api/enquiries", { preHandler: verifyBot, config: { rateLimit: { max: 5, timeWindow: "10 minutes" } } }, async (request) => {
     const body = enquiry.parse(request.body);
     const principal = await optionalPrincipal(request, env, authRepository);
     const pkg = await repository.findPackage(body.packageId);

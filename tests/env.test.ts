@@ -9,6 +9,9 @@ const validEnv = {
 };
 
 describe("environment validation", () => {
+  it("treats an empty optional bot secret as disabled", () => {
+    expect(parseEnv({ ...validEnv, BOT_PROTECTION_SECRET: "" }).BOT_PROTECTION_SECRET).toBeUndefined();
+  });
   it("parses required production-facing configuration", () => {
     const env = parseEnv(validEnv);
     expect(env.PORT).toBe(3000);

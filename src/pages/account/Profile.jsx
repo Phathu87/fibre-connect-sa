@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
 import { authService } from '@/services/authService';
 import { useAuth } from '@/lib/AuthContext';
+import { notificationService } from '@/services/userDataService';
 
 export default function Profile() {
   const { user, checkUserAuth } = useAuth();
@@ -37,8 +38,9 @@ export default function Profile() {
 }
 
 function CommPrefs() {
-  const [prefs, setPrefs] = useState(() => notificationService_get());
-  const toggle = (k) => { const n = { ...prefs, [k]: !prefs[k] }; setPrefs(n); notificationService_set(n); };
+  const [prefs, setPrefs] = useState({ email: true, sms: false, push: false, marketing: false });
+  useEffect(() => { notificationService.getPrefs().then(setPrefs); }, []);
+  const toggle = async (k) => { const next = { ...prefs, [k]: !prefs[k] }; setPrefs(next); setPrefs(await notificationService.setPrefs(next)); };
   return (
     <div className="mt-2 space-y-2">
       {[['email', 'Email notifications', 'Enquiry updates and account alerts'], ['sms', 'SMS notifications', 'Critical updates via SMS'], ['push', 'Push notifications', 'Mobile app push (when available)'], ['marketing', 'Marketing', 'Deals, offers and promotions']].map(([k, label, desc]) => (
@@ -50,5 +52,3 @@ function CommPrefs() {
     </div>
   );
 }
-function notificationService_get() { return JSON.parse(localStorage.getItem('fc_notif_prefs') || '{"email":true,"sms":false,"push":false,"marketing":false}'); }
-function notificationService_set(p) { localStorage.setItem('fc_notif_prefs', JSON.stringify(p)); }

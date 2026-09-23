@@ -10,7 +10,7 @@ FibreConnect SA is a broadband discovery, comparison and lead-generation platfor
 
 ## Current state
 
-This repository contains the active FibreConnect SA React application, Fastify API and Prisma/PostgreSQL data layer. WP1-WP4 are complete: the production foundation, database-backed catalogue, deterministic coverage engine, authentication and server-enforced RBAC are implemented. Live commercial coverage, transactional email and production deployment configuration remain external release blockers.
+This repository contains the active FibreConnect SA React application, Fastify API and Prisma/PostgreSQL data layer. WP1-WP5 are complete: the production foundation, database-backed catalogue, deterministic coverage engine, authentication/RBAC, and durable account/enquiry pipeline are implemented. WP6 security, privacy and observability work is in validation. Live commercial coverage, transactional email and account-level production deployment remain external release blockers.
 
 ### What works today (end-to-end)
 
@@ -24,7 +24,7 @@ This repository contains the active FibreConnect SA React application, Fastify A
 - **Provider & network directories** with detail pages, coverage areas, and related packages
 - **SEO-ready location landing pages** (`/fibre/:province/:city/:suburb`)
 - **Business connectivity** flow
-- **Saved packages** and **compare tray** (persistent across the app via local state)
+- **Saved packages** and **compare tray** with authenticated PostgreSQL persistence and guest-local fallback
 - **Multi-step enquiry** flow with reference number and confirmation
 - **User account:** profile, addresses, saved packages, comparisons, enquiries, notifications
 - **Admin dashboard:** providers, networks, packages, coverage, enquiries, customers, promotions, content, analytics, settings
@@ -102,7 +102,7 @@ npm run dev      # start the dev server
 npm run build    # production build
 ```
 
-The app runs as a standard Vite application. There is no published live URL yet.
+The app runs locally as a Vite frontend with a Fastify API. Netlify build, SPA routing and serverless API configuration are checked in; account-level site connection and production environment variables remain required. The old `mweb-fiber-app.netlify.app` deployment is no longer available.
 
 ---
 
@@ -110,9 +110,9 @@ The app runs as a standard Vite application. There is no published live URL yet.
 
 Public: `/`, `/coverage`, `/coverage/results`, `/packages`, `/packages/:slug`, `/compare`, `/providers`, `/providers/:slug`, `/networks`, `/networks/:slug`, `/fibre/:province/:city/:suburb`, `/business`, `/saved`, `/enquire`, `/partners`, `/help`, `/help/:slug`, `/contact`, `/download`, `/about`, `/terms`, `/privacy`, `/cookies`, `/accessibility`, `/disclaimer`
 
-Account (protected): `/account`, `/account/profile`, `/account/addresses`, `/account/saved`, `/account/comparisons`, `/account/enquiries`, `/account/notifications`
+Account (protected): `/account`, `/account/profile`, `/account/addresses`, `/account/saved`, `/account/comparisons`, `/account/enquiries`, `/account/notifications`, `/account/privacy`
 
-Admin: `/admin`, `/admin/providers`, `/admin/networks`, `/admin/packages`, `/admin/coverage`, `/admin/enquiries`, `/admin/customers`, `/admin/promotions`, `/admin/content`, `/admin/analytics`, `/admin/settings`
+Admin: `/admin`, `/admin/providers`, `/admin/networks`, `/admin/packages`, `/admin/coverage`, `/admin/enquiries`, `/admin/customers`, `/admin/promotions`, `/admin/content`, `/admin/analytics`, `/admin/audit`, `/admin/settings`
 
 Auth: `/login`, `/register`, `/forgot-password`, `/reset-password`
 

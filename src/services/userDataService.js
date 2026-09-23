@@ -50,5 +50,14 @@ export const notificationService = {
   async setPrefs(preferences) { return (await apiPut('/me/notification-preferences', preferences)).preferences; },
 };
 
+export const privacyService = {
+  async exportData() { return apiGet('/me/data-export'); },
+  async deleteAccount(password) { return apiDelete('/me/account', { password }); },
+};
+
+export const auditService = {
+  async list(params) { return apiGet('/admin/audit-logs', params); },
+};
+
 export const searchHistoryService = { list() { return storage.get(KEYS.RECENT_SEARCHES, []); }, add(address) { const list = storage.get(KEYS.RECENT_SEARCHES, []); const key = JSON.stringify(address); storage.set(KEYS.RECENT_SEARCHES, [address, ...list.filter(item => JSON.stringify(item) !== key)].slice(0, 5)); }, clear() { storage.remove(KEYS.RECENT_SEARCHES); } };
 export const coverageHistoryService = { list() { return storage.get(KEYS.COVERAGE_HISTORY, []); }, add(entry) { storage.set(KEYS.COVERAGE_HISTORY, [{ id: `ch-${Date.now().toString(36)}`, ...entry, at: new Date().toISOString() }, ...storage.get(KEYS.COVERAGE_HISTORY, [])].slice(0, 20)); } };

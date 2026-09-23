@@ -30,7 +30,7 @@ export async function apiPost(path, body) {
 
 export function apiPatch(path, body) { return apiMutation('PATCH', path, body); }
 export function apiPut(path, body) { return apiMutation('PUT', path, body); }
-export function apiDelete(path) { return apiMutation('DELETE', path); }
+export function apiDelete(path, body) { return apiMutation('DELETE', path, body); }
 
 async function apiMutation(method, path, body) {
   const csrf = document.cookie.split('; ').find(item => item.startsWith('fc_csrf='))?.split('=')[1];

@@ -87,4 +87,13 @@ describe("HTTP foundation", () => {
     expect(admin.statusCode).toBe(401);
     expect(admin.json().error.code).toBe("AUTHENTICATION_REQUIRED");
   });
+
+  it("requires bot verification on protected public mutations when configured", async () => {
+    const app = createApp({ ...env, BOT_PROTECTION_SECRET: "test-secret" });
+    apps.push(app);
+    const response = await app.inject({ method: "POST", url: "/api/auth/register", payload: { email: "person@example.test", password: "A sufficiently long password", firstName: "Test", lastName: "Person" } });
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe("BOT_VERIFICATION_REQUIRED");
+    expect(response.body).not.toContain("test-secret");
+  });
 });

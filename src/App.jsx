@@ -51,6 +51,7 @@ import AccountSaved from '@/pages/account/AccountSaved';
 import Comparisons from '@/pages/account/Comparisons';
 import Enquiries from '@/pages/account/Enquiries';
 import Notifications from '@/pages/account/Notifications';
+import AccountPrivacy from '@/pages/account/Privacy';
 
 // Admin
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -59,6 +60,7 @@ import AdminProviders from '@/pages/admin/AdminProviders';
 import AdminPackages from '@/pages/admin/AdminPackages';
 import AdminEnquiries from '@/pages/admin/AdminEnquiries';
 import AdminGeneric from '@/pages/admin/AdminGeneric';
+import AdminAudit from '@/pages/admin/AdminAudit';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth } = useAuth();
@@ -119,6 +121,7 @@ const AuthenticatedApp = () => {
             <Route path="comparisons" element={<Comparisons />} />
             <Route path="enquiries" element={<Enquiries />} />
             <Route path="notifications" element={<Notifications />} />
+            <Route path="privacy" element={<AccountPrivacy />} />
           </Route>
         </Route>
       </Route>
@@ -136,6 +139,7 @@ const AuthenticatedApp = () => {
           <Route path="promotions" element={<AdminGeneric section="promotions" />} />
           <Route path="content" element={<AdminGeneric section="content" />} />
           <Route path="analytics" element={<AdminGeneric section="analytics" />} />
+          <Route path="audit" element={<AdminAudit />} />
           <Route path="settings" element={<AdminGeneric section="settings" />} />
         </Route>
       </Route>
