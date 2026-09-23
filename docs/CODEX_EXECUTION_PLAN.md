@@ -242,7 +242,7 @@ Execution evidence:
 
 ## WP7 - CI/CD and Release Documentation
 
-Status: NOT STARTED
+Status: IN PROGRESS
 
 Objective: Add deterministic CI, release checklists, rollback, backup/recovery, metrics dictionary and production readiness documentation.
 
@@ -259,6 +259,13 @@ Security impact: Dependency review, secret scanning and protected workflow desig
 Tests required: CI dry run or platform-run evidence where available.
 
 Completion criteria: CI gates mirror local verification and docs clearly identify blockers.
+
+Execution evidence in progress:
+
+- Added a least-privilege GitHub Actions pipeline with deterministic npm installation, full validation/build, uploaded build artifact, disposable PostgreSQL migration/seed/integration testing and a critical dependency gate.
+- Added release, rollback, backup/recovery and controlled hotfix procedures plus a technical/operational/product metrics dictionary.
+- Added Netlify frontend/function configuration and deployment-variable documentation based on the old app's hosting model; historical Netlify addresses are no longer live.
+- Platform-run GitHub Actions evidence is required before WP7 can be marked complete.
 
 ## WP8 - PWA and Native Preparation
 

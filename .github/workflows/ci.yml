@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate application
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run validate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fibreconnect-web-dist
+          path: dist
+          if-no-files-found: error
+          retention-days: 7
+
+  postgres-integration:
+    name: PostgreSQL integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: fibreconnect
+          POSTGRES_PASSWORD: fibreconnect
+          POSTGRES_DB: fibreconnect
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fibreconnect -d fibreconnect"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://fibreconnect:fibreconnect@127.0.0.1:5432/fibreconnect?schema=public
+      DIRECT_URL: postgresql://fibreconnect:fibreconnect@127.0.0.1:5432/fibreconnect?schema=public
+      PUBLIC_APP_URL: http://127.0.0.1:5173
+      CORS_ORIGINS: http://127.0.0.1:5173
+      LOG_LEVEL: silent
+      TRUST_PROXY: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:migrate
+      - run: npm run db:seed
+      - run: npm run test:db:integration
+
+  dependency-audit:
+    name: Dependency critical gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=critical
