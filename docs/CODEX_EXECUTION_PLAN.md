@@ -183,7 +183,7 @@ Completion evidence:
 
 ## WP5 - User Data and Enquiry Pipeline
 
-Status: IN PROGRESS
+Status: COMPLETE
 
 Objective: Persist profile, addresses, saved packages, comparisons, enquiries, status history and notification preferences.
 
@@ -200,6 +200,15 @@ Security impact: Ownership enforcement, duplicate prevention, consent timestamps
 Tests required: full enquiry journey, duplicate protection, account/admin status visibility and IDOR checks.
 
 Completion criteria: Primary enquiry workflow persists durably and can be operated by authorized admins.
+
+Execution evidence:
+
+- Replaced account `localStorage` persistence with authenticated Fastify routes for addresses, saved packages, comparisons, notification preferences and account enquiry history. Guest saved/comparison behavior remains local by design until authentication.
+- Added public enquiry creation with strict validation, active-package checks, ten-minute duplicate suppression, explicit consent timestamps, optional authenticated ownership and initial status history.
+- Added permission-protected admin listing and mutation. Status/note changes are durable, append enquiry history and create an `AuditLog` record; fictional staff assignment choices were removed from the UI.
+- Repository ownership predicates prevent cross-account address mutation. Comparison writes reject inactive or unknown packages and cap unique selections at four.
+- The seven-test live Supabase integration suite passes, including the full WP5 journey, duplicate denial, account/admin visibility, consent persistence, audit evidence and an IDOR deletion attempt.
+- Prisma validation/client generation, lint, frontend/server type checks, unit tests and production build pass. Full evidence is recorded in `docs/WP5_USER_DATA_ENQUIRY_EXECUTION.md`.
 
 ## WP6 - Security, Privacy and Observability
 

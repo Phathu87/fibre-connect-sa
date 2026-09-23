@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bell } from 'lucide-react';
 import { notificationService } from '@/services/userDataService';
+import { enquiryService } from '@/services/userDataService';
 
 export default function Notifications() {
-  const [notifs, setNotifs] = useState(() => notificationService.list());
-  const [prefs, setPrefs] = useState(() => notificationService.getPrefs());
-  const toggle = (k) => { const n = { ...prefs, [k]: !prefs[k] }; setPrefs(n); notificationService.setPrefs(n); };
+  const [notifs, setNotifs] = useState([]);
+  const [prefs, setPrefs] = useState({ email: true, sms: false, push: false, marketing: false });
+  useEffect(() => { notificationService.getPrefs().then(setPrefs); enquiryService.list().then(items => setNotifs(items.slice(0, 5).map(item => ({ id: item.id, title: `Enquiry ${item.reference}: ${item.status}`, body: `Your application for "${item.packageName}" is now "${item.status}".` })))); }, []);
+  const toggle = async (k) => { const next = { ...prefs, [k]: !prefs[k] }; setPrefs(await notificationService.setPrefs(next)); };
 
   return (
     <div className="space-y-5">

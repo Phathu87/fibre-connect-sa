@@ -3,31 +3,20 @@ import { Search, X, User, Mail, Phone, MapPin, MessageSquare, Send } from 'lucid
 import { enquiryService } from '@/services/userDataService';
 import { ENQUIRY_STATUSES } from '@/data/mockData';
 
-const STAFF = ['Unassigned', 'Thabo N.', 'Aisha K.', 'Lerato M.', 'Sipho D.'];
-
 export default function AdminEnquiries() {
   const [enquiries, setEnquiries] = useState([]);
   const [q, setQ] = useState('');
   const [selected, setSelected] = useState(null);
 
-  const load = () => enquiryService.list().then(setEnquiries);
+  const load = () => enquiryService.listAdmin().then(setEnquiries);
   useEffect(() => { load(); }, []);
 
   const filtered = enquiries.filter(e => (e.reference + e.packageName + (e.firstName || '')).toLowerCase().includes(q.toLowerCase()));
 
-  const update = (id, data) => {
-    const all = JSON.parse(localStorage.getItem('fc_enquiries') || '[]');
-    const updated = all.map(e => {
-      if (e.id !== id) return e;
-      const next = { ...e, ...data };
-      if (data.status && data.status !== e.status) {
-        next.statusHistory = [...(e.statusHistory || []), { status: data.status, at: new Date().toISOString(), note: data.note || '' }];
-      }
-      return next;
-    });
-    localStorage.setItem('fc_enquiries', JSON.stringify(updated));
-    load();
-    setSelected(s => updated.find(e => e.id === id) || s);
+  const update = async (id, data) => {
+    const updated = await enquiryService.updateAdmin(id, data);
+    setEnquiries(current => current.map(item => item.id === id ? updated : item));
+    setSelected(updated);
   };
 
   return (
@@ -90,12 +79,7 @@ function EnquiryDrawer({ enquiry, onClose, onUpdate }) {
               {ENQUIRY_STATUSES.map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
-          <div>
-            <label className="text-sm font-medium">Assigned to</label>
-            <select value={enquiry.assignedTo || ''} onChange={e => onUpdate(enquiry.id, { assignedTo: e.target.value })} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-2 text-sm">
-              {STAFF.map(s => <option key={s}>{s}</option>)}
-            </select>
-          </div>
+          <p className="text-sm text-muted-foreground">Assigned to: {enquiry.assignedTo || 'Unassigned'}</p>
         </div>
 
         <div className="mt-4">

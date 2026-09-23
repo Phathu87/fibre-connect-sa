@@ -11,9 +11,10 @@ function emit(name) { window.dispatchEvent(new CustomEvent(name)); }
 export function useCompare() {
   const [ids, setIds] = useState(() => compareService.listSync());
 
-  const sync = useCallback(() => setIds(compareService.listSync()), []);
+  const sync = useCallback(() => { compareService.listIds().then(setIds).catch(() => {}); }, []);
 
   useEffect(() => {
+    sync();
     const h = () => sync();
     window.addEventListener(COMPARE_EVENT, h);
     window.addEventListener('storage', h);
@@ -42,9 +43,10 @@ export function useCompare() {
 export function useSaved() {
   const [ids, setIds] = useState(() => savedService.listSync());
 
-  const sync = useCallback(() => setIds(savedService.listSync()), []);
+  const sync = useCallback(() => { savedService.list().then(items => setIds(items.map(item => item.id))).catch(() => {}); }, []);
 
   useEffect(() => {
+    sync();
     const h = () => sync();
     window.addEventListener(SAVED_EVENT, h);
     window.addEventListener('storage', h);

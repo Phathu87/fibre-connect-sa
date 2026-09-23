@@ -12,6 +12,7 @@ import { AppError, errorEnvelope } from "./lib/errors.js";
 import { registerCatalogueRoutes } from "./routes/catalogue.js";
 import { registerCoverageRoutes } from "./routes/coverage.js";
 import { registerAuthRoutes } from "./routes/auth.js";
+import { registerUserDataRoutes } from "./routes/userData.js";
 
 export function createApp(env: AppEnv) {
   const app = Fastify({
@@ -56,6 +57,7 @@ export function createApp(env: AppEnv) {
   app.register(registerCatalogueRoutes, env);
   app.register(registerCoverageRoutes, env);
   app.register(registerAuthRoutes, env);
+  app.register(registerUserDataRoutes, env);
 
   app.setNotFoundHandler((request, reply) => {
     reply.code(404).send(errorEnvelope("not_found", "Resource not found", request.id));

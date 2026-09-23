@@ -23,6 +23,7 @@ export default function Enquire() {
     privacy: false, terms: false, providerContact: false, marketing: false,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [result, setResult] = useState(null);
 
   useEffect(() => {
@@ -52,15 +53,21 @@ export default function Enquire() {
 
   const submit = async () => {
     setSubmitting(true);
-    const res = await enquiryService.create({
-      ...data,
-      packageId: pkg.id, packageSlug: pkg.slug, packageName: pkg.name,
-      providerId: pkg.providerId, providerName: pkg.provider?.name,
-      monthlyPrice: pkg.promotionalPrice || pkg.monthlyPrice, installationFee: pkg.installationFee,
-    });
-    events.enquiryCompleted(res.reference);
-    setSubmitting(false);
-    setResult(res);
+    setSubmitError('');
+    try {
+      const res = await enquiryService.create({
+        ...data,
+        packageId: pkg.id, packageSlug: pkg.slug, packageName: pkg.name,
+        providerId: pkg.providerId, providerName: pkg.provider?.name,
+        monthlyPrice: pkg.promotionalPrice || pkg.monthlyPrice, installationFee: pkg.installationFee,
+      });
+      events.enquiryCompleted(res.reference);
+      setResult(res);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'We could not submit your enquiry. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) return <div className="mx-auto max-w-2xl px-4 py-10"><div className="h-80 animate-pulse rounded-xl border border-border bg-muted/40" /></div>;
@@ -237,6 +244,7 @@ export default function Enquire() {
         )}
 
         {/* nav */}
+        {submitError && <p role="alert" className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{submitError}</p>}
         <div className="mt-6 flex items-center justify-between">
           <button onClick={back} disabled={step === 0} className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium disabled:opacity-40"><ChevronLeft className="h-4 w-4" /> Back</button>
           <button onClick={next} disabled={!canNext() || submitting} className="inline-flex items-center gap-1 rounded-lg bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50">

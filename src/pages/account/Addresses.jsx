@@ -1,21 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MapPin, Plus, Trash2, Star, Check } from 'lucide-react';
 import { userService } from '@/services/userDataService';
 
 export default function Addresses() {
-  const [addresses, setAddresses] = useState(() => userService.getAddresses());
+  const [addresses, setAddresses] = useState([]);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ street: '', suburb: '', city: '', province: '', postalCode: '' });
 
-  const add = (e) => {
+  const load = () => userService.getAddresses().then(setAddresses);
+  useEffect(() => { load(); }, []);
+  const add = async (e) => {
     e.preventDefault();
-    const item = userService.addAddress(form);
-    setAddresses(userService.getAddresses());
+    await userService.addAddress(form);
+    await load();
     setForm({ street: '', suburb: '', city: '', province: '', postalCode: '' });
     setAdding(false);
   };
-  const remove = (id) => { userService.removeAddress(id); setAddresses(userService.getAddresses()); };
-  const setPreferred = (id) => { userService.setPreferred(id); setAddresses(userService.getAddresses()); };
+  const remove = async (id) => { await userService.removeAddress(id); await load(); };
+  const setPreferred = async (id) => { await userService.setPreferred(id); await load(); };
 
   return (
     <div className="space-y-4">
