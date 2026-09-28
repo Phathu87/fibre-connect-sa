@@ -14,7 +14,7 @@ Scope: read-only dependency security analysis. No dependency remediation was per
 - Commands executed: `npm audit --json`, `npm audit fix --dry-run --json`, `npm explain`, `npm ls`, and the CI-equivalent `npm audit --audit-level=critical`
 - Existing `docs/DEPENDENCY_SECURITY_AUDIT.md` was compared with the current tree. Its historical 17-advisory result is stale; its 2026-09-18 update matches the current total but did not contain the complete current reachability and release-impact analysis below.
 
-## Current Advisory Counts
+## Phase 8.2 Pre-remediation Advisory Counts
 
 | Severity | Count |
 | --- | ---: |
@@ -26,7 +26,28 @@ Scope: read-only dependency security analysis. No dependency remediation was per
 
 The eight npm vulnerability records represent three parent dependency chains and six underlying GitHub advisory identifiers. Aggregate parent records inherit severity from their vulnerable children and are listed separately because npm reports them separately.
 
-## Advisory Inventory
+## Phase 8.2A Remediation Update
+
+Phase 8.2A removed the unused direct `react-quill-new@3.8.3` dependency through npm. Its vulnerable `quill@2.0.3` chain disappeared naturally. The post-removal audit result is:
+
+| Severity | Before | After |
+| --- | ---: | ---: |
+| Critical | 0 | 0 |
+| High | 4 | 4 |
+| Moderate | 2 | 2 |
+| Low | 2 | 0 |
+| Total | 8 | 6 |
+
+- Removed lockfile nodes: `react-quill-new@3.8.3`, `quill@2.0.3`, `quill-delta@5.1.0`, `parchment@3.0.0`, `eventemitter3@5.0.4`, `fast-diff@1.3.0`, `lodash-es@4.18.1`, `lodash.clonedeep@4.5.0`, and `lodash.isequal@4.5.0`.
+- `eventemitter3@4.0.7` remains correctly because it is independently required by Recharts.
+- `npm ci`: PASS, 789 packages installed and 790 audited.
+- `npm run validate`: PASS, including 4 test files / 23 tests and the production build.
+- Critical gate: PASS, `npm audit --audit-level=critical` exit code 0.
+- No unrelated package version changed.
+
+The Quill rows below are retained as historical pre-remediation evidence and are no longer present in the current audit.
+
+## Advisory Inventory (Phase 8.2 Pre-remediation)
 
 | Package | Severity | Direct/Transitive | Prod/Dev | Reachability | Fix | Breaking? | Portfolio Blocker? | Commercial Blocker? |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -158,12 +179,13 @@ None of these changes should be applied automatically. In particular, the Prisma
 ## Minimum Safe Remediation Set
 
 1. Upgrade `react-router-dom` from 6.30.6 to a fixed supported release at or above 7.18.4; validate all public, account, admin, protected, parameterized, query-string, and fallback routes. Complexity: **MEDIUM**.
-2. Remove unused `react-quill-new` and its transitive `quill` package after confirming no planned release feature depends on it. Complexity: **SMALL**.
-3. Track a compatible Prisma release whose dependency tree fixes `deepmerge-ts` and `mysql2`; upgrade Prisma CLI and client together and rerun generation, migrations, PostgreSQL integration, and runtime tests. Do not apply the proposed 7.10.0 -> 6.19.3 downgrade. Complexity: **MEDIUM**.
+2. Track a compatible Prisma release whose dependency tree fixes `deepmerge-ts` and `mysql2`; upgrade Prisma CLI and client together and rerun generation, migrations, PostgreSQL integration, and runtime tests. Do not apply the proposed 7.10.0 -> 6.19.3 downgrade. Complexity: **MEDIUM**.
+
+Completed in Phase 8.2A: removal of unused `react-quill-new` and its transitive vulnerable Quill chain.
 
 ## Proposed Remediation Phases
 
-- **Phase 8.2A - Remove Unused Editor Dependency (SMALL):** remove `react-quill-new`, regenerate the lockfile through a normal install, and run full validation and bundle inspection.
+- **Phase 8.2A - Remove Unused Editor Dependency (SMALL): COMPLETED.** `react-quill-new` and its Quill chain were removed; clean install, validation, build, and audit passed.
 - **Phase 8.2B - React Router Security Upgrade (MEDIUM):** migrate to a fixed React Router DOM release, address v7 compatibility deliberately, and run focused routing plus browser regression tests.
 - **Phase 8.2C - Prisma Toolchain Advisory Resolution (MEDIUM):** when a compatible fixed Prisma line is available, update CLI/client together and validate PostgreSQL generation, migration, seed, integration, and Netlify runtime behavior.
 
@@ -187,6 +209,5 @@ None of these changes should be applied automatically. In particular, the Prisma
 - Acceptance status: PASS
 - Portfolio/public demo dependency release blocker: NO
 - Future live commercial dependency work required: YES
-- Recommended next phase: Phase 8.2A - Remove Unused Editor Dependency
+- Recommended next phase: Phase 8.2B - React Router Security Upgrade
 - Safe to proceed to the recommended scoped remediation phase after explicit approval: YES
-
