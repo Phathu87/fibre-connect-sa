@@ -47,6 +47,29 @@ Phase 8.2A removed the unused direct `react-quill-new@3.8.3` dependency through 
 
 The Quill rows below are retained as historical pre-remediation evidence and are no longer present in the current audit.
 
+## Phase 8.2B-2 Remediation Update
+
+Phase 8.2B-2 upgraded the direct `react-router-dom` dependency from 6.30.6 to 7.18.4, which resolved `react-router@7.18.4` transitively. The post-upgrade audit result is:
+
+| Severity | Before 8.2B-2 | After 8.2B-2 |
+| --- | ---: | ---: |
+| Critical | 0 | 0 |
+| High | 4 | 4 |
+| Moderate | 2 | 0 |
+| Low | 0 | 0 |
+| Total | 6 | 4 |
+
+- `GHSA-wrjc-x8rr-h8h6`: no longer reported.
+- `GHSA-337j-9hxr-rhxg`: no longer reported.
+- `npm ci`: PASS, 788 packages installed and 789 audited.
+- `npm run validate`: PASS, including 5 test files / 40 tests and the production build.
+- Focused routing/security suite: PASS, 17 tests.
+- Critical gate: PASS, `npm audit --audit-level=critical` exit code 0.
+- Existing declarative `BrowserRouter` / `Routes` architecture and public URLs were preserved.
+- No unrelated dependency version changed.
+
+The React Router rows below are retained as historical pre-remediation evidence and are no longer present in the current audit.
+
 ## Advisory Inventory (Phase 8.2 Pre-remediation)
 
 | Package | Severity | Direct/Transitive | Prod/Dev | Reachability | Fix | Breaking? | Portfolio Blocker? | Commercial Blocker? |
@@ -166,27 +189,30 @@ None of these changes should be applied automatically. In particular, the Prisma
 - Immediate dependency blocker: **NO**.
 - No critical advisory exists.
 - No high-severity advisory has a demonstrated public production request path.
-- The active router package has moderate findings, but current navigation destinations are application-controlled and SSR hydration is absent.
-- Release should retain the current CI critical gate and document the deferred commercial hardening work.
+- The React Router and unused editor findings have been remediated and verified by clean install, automated validation, and fresh audit evidence.
+- Release should retain the current CI critical gate and complete the planned rendered routing regression phase.
 
 ### Future Live Commercial Release
 
 - Immediate high-severity runtime blocker: **NO based on the current PostgreSQL and request architecture**.
-- Commercial-readiness blocker: **YES for the React Router chain until a controlled fixed-version migration and focused navigation regression test are completed**, unless a later code-level validation establishes and enforces that untrusted destinations cannot enter routing APIs.
-- The unused editor dependency should be removed before commercial release to reduce unnecessary attack surface.
+- React Router package-level blocker: **RESOLVED** by the validated 7.18.4 migration and focused automated regression tests.
+- The unused editor dependency was removed in Phase 8.2A.
+- Rendered browser regression remains required in Phase 8.2B-3 before closing routing release validation.
 - The Prisma CLI chain should be remediated through a compatible upstream parent release, not npm's forced downgrade. Until then, Prisma configuration and migration execution must remain trusted operator-controlled activities.
 
 ## Minimum Safe Remediation Set
 
-1. Upgrade `react-router-dom` from 6.30.6 to a fixed supported release at or above 7.18.4; validate all public, account, admin, protected, parameterized, query-string, and fallback routes. Complexity: **MEDIUM**.
-2. Track a compatible Prisma release whose dependency tree fixes `deepmerge-ts` and `mysql2`; upgrade Prisma CLI and client together and rerun generation, migrations, PostgreSQL integration, and runtime tests. Do not apply the proposed 7.10.0 -> 6.19.3 downgrade. Complexity: **MEDIUM**.
+1. Track a compatible Prisma release whose dependency tree fixes `deepmerge-ts` and `mysql2`; upgrade Prisma CLI and client together and rerun generation, migrations, PostgreSQL integration, and runtime tests. Do not apply the proposed 7.10.0 -> 6.19.3 downgrade. Complexity: **MEDIUM**.
 
 Completed in Phase 8.2A: removal of unused `react-quill-new` and its transitive vulnerable Quill chain.
+
+Completed in Phase 8.2B-2: upgrade to `react-router-dom@7.18.4` / `react-router@7.18.4`, removal of both moderate router records, and focused automated routing/security coverage.
 
 ## Proposed Remediation Phases
 
 - **Phase 8.2A - Remove Unused Editor Dependency (SMALL): COMPLETED.** `react-quill-new` and its Quill chain were removed; clean install, validation, build, and audit passed.
-- **Phase 8.2B - React Router Security Upgrade (MEDIUM):** migrate to a fixed React Router DOM release, address v7 compatibility deliberately, and run focused routing plus browser regression tests.
+- **Phase 8.2B-2 - React Router Security Upgrade (MEDIUM): COMPLETED.** The v7 dependency migration and focused automated tests passed.
+- **Phase 8.2B-3 - Rendered Routing Regression Validation:** pending independent desktop/mobile browser validation.
 - **Phase 8.2C - Prisma Toolchain Advisory Resolution (MEDIUM):** when a compatible fixed Prisma line is available, update CLI/client together and validate PostgreSQL generation, migration, seed, integration, and Netlify runtime behavior.
 
 ## CI Critical Gate Verification
@@ -198,16 +224,17 @@ Completed in Phase 8.2A: removal of unused `react-quill-new` and its transitive 
 
 ## Integrity Verification
 
-- `package.json`: unchanged; working-tree hash equals HEAD blob hash.
-- `package-lock.json`: unchanged; working-tree hash equals HEAD blob hash.
-- Application source and configuration: unchanged.
-- Permitted audit change: this evidence document only.
-- Expensive application validation was not rerun because audit tooling did not modify repository state.
+- `package.json`: only `react-router-dom` changed from the v6 range to exact `7.18.4` during Phase 8.2B-2.
+- `package-lock.json`: only the matching router dependency graph changed.
+- Application routing architecture and URLs: unchanged.
+- Minimal source change: exported the existing `AuthenticatedApp` component for focused route testing.
+- Tests: added the scoped routing/security suite.
+- Full validation and fresh audit completed successfully after the changes.
 
 ## Phase Decision
 
 - Acceptance status: PASS
 - Portfolio/public demo dependency release blocker: NO
 - Future live commercial dependency work required: YES
-- Recommended next phase: Phase 8.2B - React Router Security Upgrade
+- Recommended next phase: Phase 8.2B-3 - Rendered Routing Regression Validation
 - Safe to proceed to the recommended scoped remediation phase after explicit approval: YES

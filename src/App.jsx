@@ -62,7 +62,7 @@ import AdminEnquiries from '@/pages/admin/AdminEnquiries';
 import AdminGeneric from '@/pages/admin/AdminGeneric';
 import AdminAudit from '@/pages/admin/AdminAudit';
 
-const AuthenticatedApp = () => {
+export const AuthenticatedApp = () => {
   const { isLoadingAuth } = useAuth();
 
   if (isLoadingAuth) {
