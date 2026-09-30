@@ -88,6 +88,15 @@ describe("HTTP foundation", () => {
     expect(admin.json().error.code).toBe("AUTHENTICATION_REQUIRED");
   });
 
+  it("denies anonymous notification-preference access", async () => {
+    const app = createApp(env);
+    apps.push(app);
+    const response = await app.inject({ method: "GET", url: "/api/me/notification-preferences" });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json().error.code).toBe("AUTHENTICATION_REQUIRED");
+  });
+
   it("requires bot verification on protected public mutations when configured", async () => {
     const app = createApp({ ...env, BOT_PROTECTION_SECRET: "test-secret" });
     apps.push(app);

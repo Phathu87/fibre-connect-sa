@@ -4,17 +4,42 @@ import { Heart, FileText, MapPin, GitCompare, Bell, ArrowRight } from 'lucide-re
 import { useSaved, useCompare } from '@/hooks/useCollections';
 import { coverageHistoryService, enquiryService, notificationService } from '@/services/userDataService';
 
+const DEFAULT_NOTIFICATION_PREFERENCES = { email: true, sms: false, push: false, marketing: false };
+
+export async function loadAccountOverview() {
+  const [enquiriesResult, preferencesResult] = await Promise.allSettled([
+    enquiryService.list(),
+    notificationService.getPrefs(),
+  ]);
+
+  return {
+    enquiries: enquiriesResult.status === 'fulfilled' ? enquiriesResult.value : [],
+    notificationPreferences: preferencesResult.status === 'fulfilled'
+      ? preferencesResult.value
+      : DEFAULT_NOTIFICATION_PREFERENCES,
+  };
+}
+
+export function countEnabledNotificationChannels(preferences) {
+  return ['email', 'sms', 'push', 'marketing'].filter(channel => preferences[channel]).length;
+}
+
 export default function Account() {
   const { count: savedCount } = useSaved();
   const { count: compareCount } = useCompare();
   const [enquiries, setEnquiries] = useState([]);
   const [history, setHistory] = useState([]);
-  const [notifs, setNotifs] = useState([]);
+  const [notificationPrefs, setNotificationPrefs] = useState(DEFAULT_NOTIFICATION_PREFERENCES);
 
   useEffect(() => {
-    enquiryService.list().then(setEnquiries);
     setHistory(coverageHistoryService.list());
-    setNotifs(notificationService.list());
+    let active = true;
+    loadAccountOverview().then((overview) => {
+      if (!active) return;
+      setEnquiries(overview.enquiries);
+      setNotificationPrefs(overview.notificationPreferences);
+    });
+    return () => { active = false; };
   }, []);
 
   const cards = [
@@ -22,7 +47,7 @@ export default function Account() {
     { icon: GitCompare, label: 'Comparisons', value: compareCount, to: '/account/comparisons' },
     { icon: FileText, label: 'Enquiries', value: enquiries.length, to: '/account/enquiries' },
     { icon: MapPin, label: 'Coverage searches', value: history.length, to: '/account/addresses' },
-    { icon: Bell, label: 'Notifications', value: notifs.length, to: '/account/notifications' },
+    { icon: Bell, label: 'Notification channels', value: countEnabledNotificationChannels(notificationPrefs), to: '/account/notifications' },
   ];
 
   return (
