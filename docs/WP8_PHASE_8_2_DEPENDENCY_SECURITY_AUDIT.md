@@ -253,7 +253,11 @@ Completed in Phase 8.2B-2: upgrade to `react-router-dom@7.18.4` / `react-router@
 - Portfolio/public demo dependency release blocker: NO
 - Future live commercial dependency work required: YES
 - React Router remediation status: COMPLETE
-- Assessed Prisma records: 4 high aggregate records in the Prisma CLI chain; accepted for portfolio release with documented risk
+- Assessed Prisma records: 4 high aggregate records in the Prisma CLI chain; **ACCEPTED WITH DOCUMENTED RISK FOR PORTFOLIO RELEASE** under `docs/WP8_PHASE_8_2C2_PRISMA_RISK_ACCEPTANCE.md`
+- Commercial Prisma disposition: **REMEDIATION REQUIRED BEFORE/AT COMMERCIAL RELEASE GATE**, unless a renewed explicit time-bounded acceptance is approved from current evidence
 - Current repository-wide audit: 8 total, 5 high, 3 moderate, 0 critical; newly published non-Prisma records require separate triage
-- Recommended next phase: Phase 8.2C-2 - Prisma Risk Acceptance Documentation
-- Safe to proceed to the recommended scoped remediation phase after explicit approval: YES
+- Repository-wide advisory drift: newly published non-Prisma findings are **deferred for a separate future dependency-audit refresh if they affect the portfolio release decision**; they are not treated as resolved by the Prisma acceptance
+- Portfolio/public-demo Phase 8.2 dependency-security status: COMPLETE
+- Commercial dependency-security gate: OPEN
+- Recommended next phase: Phase 8.3 - Netlify Configuration Audit
+- Safe to proceed after explicit approval: YES

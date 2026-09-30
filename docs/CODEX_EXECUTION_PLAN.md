@@ -267,6 +267,23 @@ Execution evidence in progress:
 - Added Netlify frontend/function configuration and deployment-variable documentation based on the old app's hosting model; historical Netlify addresses are no longer live.
 - GitHub Actions run `#2` for commit `6a661ce` passed all three jobs in 1m 1s. The first run correctly exposed Windows/Linux import-case drift; the corrected run proves the CI gate detects and blocks that production defect class.
 
+## Stage 8 - Public Release Readiness
+
+### Phase 8.2 - Dependency Security
+
+Portfolio/Public Demo status: COMPLETE
+
+Commercial dependency-security gate: OPEN
+
+- The unused editor dependency and vulnerable Quill chain were removed in Phase 8.2A.
+- React Router was upgraded and validated through automated and rendered regression coverage in Phases 8.2B-2 and 8.2B-3.
+- The remaining four high aggregate Prisma CLI/toolchain records have no demonstrated production request path and are accepted only for the portfolio/public-demo release under the time-bounded record in `docs/WP8_PHASE_8_2C2_PRISMA_RISK_ACCEPTANCE.md`.
+- A live commercial release still requires a compatible fixed Prisma release or a renewed explicit time-bounded acceptance based on current evidence.
+- The repository-wide audit drift of 8 records (5 high, 3 moderate) includes newly published non-Prisma findings. Those findings are not considered resolved and are deferred for a separate dependency-audit refresh if they affect the portfolio release decision.
+- Phase 8.3 - Netlify Configuration Audit is the next recommended phase and requires explicit approval.
+
+The existing WP8 PWA/native work package below is separate from Stage 8 public release readiness and remains not started.
+
 ## WP8 - PWA and Native Preparation
 
 Status: NOT STARTED
