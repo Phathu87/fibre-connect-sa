@@ -70,6 +70,22 @@ Phase 8.2B-2 upgraded the direct `react-router-dom` dependency from 6.30.6 to 7.
 
 The React Router rows below are retained as historical pre-remediation evidence and are no longer present in the current audit.
 
+## Phase 8.2C-1 Prisma Advisory Assessment Update
+
+The installed Prisma chain remains `prisma@7.10.0 -> @prisma/config@7.10.0 -> deepmerge-ts@7.1.5` plus `prisma@7.10.0 -> mysql2@3.15.3`. `prisma` is a direct devDependency; the other three are transitive CLI dependencies. `@prisma/client@7.10.0` and `@prisma/adapter-pg@7.10.0` are separate runtime dependencies and are not directly affected by these four npm records.
+
+Prisma 7.10.0 is the latest stable Prisma 7 release. No stable fixed Prisma parent currently exists. npm still proposes `prisma@6.19.3`, which is an inappropriate major downgrade from the validated Prisma 7 config, adapter, generated-client, migration, and ESM architecture. Forcing `deepmerge-ts@8` or `mysql2@3.23.1` through npm overrides would bypass Prisma's exact tested dependency pins and is not recommended.
+
+Reachability is limited to trusted tooling:
+
+- `deepmerge-ts` is executable while the CLI loads repository-controlled `prisma.config.ts`; it is not imported by Fastify, Prisma Client queries, or the Netlify function request path.
+- Both mysql2 issues require an actual MySQL protocol connection. FibreConnect uses PostgreSQL/Supabase through `@prisma/adapter-pg` and has no MySQL datasource, adapter, import, or connection.
+- The Netlify function traces the Fastify app, generated client, and PostgreSQL adapter. The Prisma CLI is not imported, externalized, or explicitly included in the production function.
+
+Disposition: portfolio/public demo release is **ACCEPTABLE WITH DOCUMENTED RISK**; a future live commercial release **REQUIRES REMEDIATION OR FORMAL TIME-BOUND RISK ACCEPTANCE**. The recommended next phase is Phase 8.2C-2 - Prisma Risk Acceptance Documentation.
+
+Audit-count drift discovered during this read-only assessment: the live registry now reports 8 total records (5 high, 3 moderate), not the prior 4. The four Prisma records remain present; the additional newly published non-Prisma findings are out of scope for 8.2C-1 and require separate triage. No fix was applied.
+
 ## Advisory Inventory (Phase 8.2 Pre-remediation)
 
 | Package | Severity | Direct/Transitive | Prod/Dev | Reachability | Fix | Breaking? | Portfolio Blocker? | Commercial Blocker? |
@@ -237,6 +253,7 @@ Completed in Phase 8.2B-2: upgrade to `react-router-dom@7.18.4` / `react-router@
 - Portfolio/public demo dependency release blocker: NO
 - Future live commercial dependency work required: YES
 - React Router remediation status: COMPLETE
-- Remaining advisories: 4 high, all owned by the Prisma toolchain; 0 critical, 0 moderate, 0 low
-- Recommended next phase: Phase 8.2C-1 - Prisma Toolchain Advisory Assessment
+- Assessed Prisma records: 4 high aggregate records in the Prisma CLI chain; accepted for portfolio release with documented risk
+- Current repository-wide audit: 8 total, 5 high, 3 moderate, 0 critical; newly published non-Prisma records require separate triage
+- Recommended next phase: Phase 8.2C-2 - Prisma Risk Acceptance Documentation
 - Safe to proceed to the recommended scoped remediation phase after explicit approval: YES
