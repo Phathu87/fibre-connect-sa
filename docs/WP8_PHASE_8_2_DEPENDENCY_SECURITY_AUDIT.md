@@ -190,14 +190,14 @@ None of these changes should be applied automatically. In particular, the Prisma
 - No critical advisory exists.
 - No high-severity advisory has a demonstrated public production request path.
 - The React Router and unused editor findings have been remediated and verified by clean install, automated validation, and fresh audit evidence.
-- Release should retain the current CI critical gate and complete the planned rendered routing regression phase.
+- Release should retain the current CI critical gate. The rendered React Router regression phase is complete.
 
 ### Future Live Commercial Release
 
 - Immediate high-severity runtime blocker: **NO based on the current PostgreSQL and request architecture**.
 - React Router package-level blocker: **RESOLVED** by the validated 7.18.4 migration and focused automated regression tests.
 - The unused editor dependency was removed in Phase 8.2A.
-- Rendered browser regression remains required in Phase 8.2B-3 before closing routing release validation.
+- Rendered browser regression validation is complete: desktop, exact mobile, history, redirect safety, normal-user denial, and authorised-administrator routing all passed.
 - The Prisma CLI chain should be remediated through a compatible upstream parent release, not npm's forced downgrade. Until then, Prisma configuration and migration execution must remain trusted operator-controlled activities.
 
 ## Minimum Safe Remediation Set
@@ -212,7 +212,7 @@ Completed in Phase 8.2B-2: upgrade to `react-router-dom@7.18.4` / `react-router@
 
 - **Phase 8.2A - Remove Unused Editor Dependency (SMALL): COMPLETED.** `react-quill-new` and its Quill chain were removed; clean install, validation, build, and audit passed.
 - **Phase 8.2B-2 - React Router Security Upgrade (MEDIUM): COMPLETED.** The v7 dependency migration and focused automated tests passed.
-- **Phase 8.2B-3 - Rendered Routing Regression Validation:** pending independent desktop/mobile browser validation.
+- **Phase 8.2B-3 - Rendered Routing Regression Validation: COMPLETED.** Public, protected, mobile, history, redirect-security, and authorised-administrator scenarios passed under React Router 7.18.4.
 - **Phase 8.2C - Prisma Toolchain Advisory Resolution (MEDIUM):** when a compatible fixed Prisma line is available, update CLI/client together and validate PostgreSQL generation, migration, seed, integration, and Netlify runtime behavior.
 
 ## CI Critical Gate Verification
@@ -236,5 +236,7 @@ Completed in Phase 8.2B-2: upgrade to `react-router-dom@7.18.4` / `react-router@
 - Acceptance status: PASS
 - Portfolio/public demo dependency release blocker: NO
 - Future live commercial dependency work required: YES
-- Recommended next phase: Phase 8.2B-3 - Rendered Routing Regression Validation
+- React Router remediation status: COMPLETE
+- Remaining advisories: 4 high, all owned by the Prisma toolchain; 0 critical, 0 moderate, 0 low
+- Recommended next phase: Phase 8.2C-1 - Prisma Toolchain Advisory Assessment
 - Safe to proceed to the recommended scoped remediation phase after explicit approval: YES

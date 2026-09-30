@@ -2,7 +2,7 @@
 
 Date: 2026-09-30
 
-Status: PARTIAL
+Status: PASS
 
 ## Objective
 
@@ -34,8 +34,8 @@ No secret value was printed or recorded.
 | Account guard | Anonymous account child redirected to login | `/account/enquiries?status=open` rendered login at `/login` | PASS |
 | Internal `returnTo` | Valid same-origin destination preserved | Safe package destination propagated to registration link | PASS |
 | External `returnTo` | External destination contained | External destination omitted from registration link | PASS |
-| Admin denial | Authenticated USER redirected to `/` | Not in 8.2B-3B scope | PASS where tested |
-| Admin authorised | No approved privileged fixture was available | Explicitly deferred to 8.2B-3C | NOT VALIDATED |
+| Admin denial | Authenticated USER redirected to `/` | Reconfirmed for `/admin` and `/admin/enquiries` | PASS |
+| Admin authorised | Controlled development `ADMIN` fixture rendered `/admin` | Child deep link, refresh, navigation, and history passed | PASS |
 | 404 | Intended fallback rendered | Intended `404 Page not found` fallback rendered | PASS |
 | Back/forward | Previously incomplete | Full Home, Packages, Detail Back/Forward sequence passed | PASS |
 
@@ -73,8 +73,13 @@ The home speed finder generated a real `/packages?minSpeed=200` link. Selecting 
 
 ### Admin routing
 
-- Authenticated USER denial: PASS in the earlier desktop pass.
-- Authorised administrator root and child routes: NOT VALIDATED and reserved for Phase 8.2B-3C.
+- A unique temporary development user was registered through the normal application flow and promoted directly through the configured development database, matching the established integration-test fixture pattern.
+- Persisted role `ADMIN` was verified before normal login. `SUPER_ADMIN` was not used.
+- `/admin` rendered the dashboard and admin layout without redirect or exception.
+- `/admin/enquiries` rendered through internal navigation, direct deep link, refresh, Back, and Forward.
+- ADMIN backend authorization passed: `/api/admin/enquiries` and `/api/admin/security-check` returned 200.
+- The same controlled identity was demoted to `USER`; both admin root and child redirected to `/`, and the authenticated security check returned 403 `FORBIDDEN`.
+- The targeted fixture was then deleted. Its two sessions were cascade-deleted, and database verification returned zero remaining users and zero sessions for the fixture.
 
 ## Responsive Validation
 
@@ -104,23 +109,18 @@ Neither affected rendered navigation or application routing.
 
 ## Completion Decision
 
-Phase 8.2B-3 remains PARTIAL solely because authorised administrator root and child routing have not been validated. Phase 8.2B-3B mobile and browser-history validation is PASS.
+Phase 8.2B-3 is PASS. Desktop, exact mobile, browser history, redirect security, account repair, normal-user denial, and authorised administrator routing are all complete.
 
 - Exact 390 x 844 mobile matrix: PASS
 - Back/Forward history: PASS
 - Query-string history: PASS
-- Authorised administrator routing: NOT VALIDATED
+- Authorised administrator routing: PASS
+- React Router remediation status: COMPLETE
 - Push: none
-- Safe to begin Phase 8.2B-3C: YES
-- Safe to begin Phase 8.2C: NO
-
-## Required Closure Work
-
-Validate `/admin` and one administrator child route using an existing approved development administrator fixture in Phase 8.2B-3C.
+- Safe to begin Phase 8.2C-1 after explicit approval: YES
 
 ## Deferred
 
-- Phase 8.2B-3C - Authorised Administrator Routing Validation
-- Phase 8.2C - Prisma Toolchain Advisory Resolution
+- Phase 8.2C-1 - Prisma Toolchain Advisory Assessment
 - Existing Vite chunk-size warning
 - Netlify release phases and deployed SPA fallback proof
