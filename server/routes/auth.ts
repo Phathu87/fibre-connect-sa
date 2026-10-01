@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import type { AppEnv } from "../config/env.js";
-import { DevelopmentAuthDelivery, UnconfiguredProductionAuthDelivery } from "../auth/delivery.js";
+import { TransactionalAuthDelivery } from "../auth/delivery.js";
 import { createAuthMiddleware } from "../auth/middleware.js";
 import { ownsResource } from "../auth/permissions.js";
 import { getDatabase } from "../db/client.js";
@@ -9,6 +9,7 @@ import { AppError } from "../lib/errors.js";
 import { createAuthRepository } from "../repositories/auth.js";
 import { AuthService } from "../services/auth.js";
 import { createBotProtection } from "../security/botProtection.js";
+import { createProductionEmailProvider, DevelopmentEmailProvider, type TransactionalEmailProvider } from "../email/provider.js";
 
 const email = z.string().trim().email().max(254);
 const password = z.string().min(12).max(128);
@@ -20,9 +21,11 @@ const profileBody = z.object({ firstName: z.string().trim().min(1).max(80).optio
 const roleBody = z.object({ role: z.enum(["USER", "SUPPORT", "SALES", "PROVIDER_MANAGER", "CONTENT_EDITOR", "ANALYST", "ADMIN", "SUPER_ADMIN"]) });
 const statusBody = z.object({ status: z.enum(["ACTIVE", "UNVERIFIED", "SUSPENDED", "DISABLED"]) });
 
-export async function registerAuthRoutes(app: FastifyInstance, env: AppEnv) {
+export async function registerAuthRoutes(app: FastifyInstance, options: { env: AppEnv; emailProvider?: TransactionalEmailProvider }) {
+  const { env } = options;
   const repository = createAuthRepository(getDatabase(env.DATABASE_URL));
-  const delivery = env.NODE_ENV === "production" ? new UnconfiguredProductionAuthDelivery() : new DevelopmentAuthDelivery();
+  const provider = options.emailProvider ?? (env.NODE_ENV === "production" ? createProductionEmailProvider(env) : new DevelopmentEmailProvider());
+  const delivery = new TransactionalAuthDelivery(provider, env.PUBLIC_APP_URL, app.log);
   const service = new AuthService(repository, delivery, env.SESSION_TTL_HOURS, env.NODE_ENV !== "production");
   const auth = createAuthMiddleware(repository, env);
   const verifyBot = createBotProtection(env);
@@ -30,7 +33,7 @@ export async function registerAuthRoutes(app: FastifyInstance, env: AppEnv) {
   const publicProtection = (max: number) => ({ ...rateLimit(max), preHandler: verifyBot });
 
   app.post("/api/auth/register", publicProtection(5), async (request, reply) => {
-    const result = await service.register(registerBody.parse(request.body));
+    const result = await service.register(registerBody.parse(request.body), request.id);
     setSessionCookies(reply, env, result.session);
     return { user: result.user, ...(result.developmentVerificationToken ? { developmentVerificationToken: result.developmentVerificationToken } : {}) };
   });
@@ -47,10 +50,10 @@ export async function registerAuthRoutes(app: FastifyInstance, env: AppEnv) {
   });
   app.get("/api/me", { preHandler: auth.authenticate }, async (request) => ({ user: request.auth!.user }));
   app.patch("/api/me", { preHandler: [auth.authenticate, auth.requireCsrf] }, async (request) => ({ user: await repository.updateProfile(request.auth!.user.id, profileBody.parse(request.body)) }));
-  app.post("/api/auth/forgot-password", publicProtection(5), async (request) => ({ accepted: true, ...await service.forgotPassword(z.object({ email }).parse(request.body).email) }));
+  app.post("/api/auth/forgot-password", publicProtection(5), async (request) => ({ accepted: true, ...await service.forgotPassword(z.object({ email }).parse(request.body).email, request.id) }));
   app.post("/api/auth/reset-password", rateLimit(5), async (request) => { const body = z.object({ token, password }).parse(request.body); await service.resetPassword(body.token, body.password); return { success: true }; });
   app.post("/api/auth/verify-email", rateLimit(10), async (request) => ({ user: await service.verifyEmail(z.object({ token }).parse(request.body).token) }));
-  app.post("/api/auth/resend-verification", { preHandler: [auth.authenticate, auth.requireCsrf], ...rateLimit(3) }, async (request) => ({ accepted: true, ...await service.resendVerification(request.auth!.user.id, request.auth!.user.email) }));
+  app.post("/api/auth/resend-verification", { preHandler: [auth.authenticate, auth.requireCsrf], ...rateLimit(3) }, async (request) => ({ accepted: true, ...await service.resendVerification(request.auth!.user.id, request.auth!.user.email, request.id) }));
 
   app.get("/api/account/users/:userId", { preHandler: auth.authenticate }, async (request) => {
     const { userId } = z.object({ userId: uuid }).parse(request.params);

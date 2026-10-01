@@ -35,7 +35,10 @@ Future production environment variables. **Never commit real secrets.** These ar
 ## Email & notifications
 | Variable | Purpose |
 |----------|---------|
-| `EMAIL_PROVIDER_API_KEY` | Transactional email |
+| `RESEND_API_KEY` | Server-only Resend credential for transactional authentication email |
+| `EMAIL_FROM_ADDRESS` | Verified transactional sender address |
+| `EMAIL_FROM_NAME` | Sender display name; defaults to FibreConnect SA |
+| `EMAIL_PROVIDER_TIMEOUT_MS` | Outbound email API timeout in milliseconds |
 | `SMS_PROVIDER_API_KEY` | SMS (optional) |
 | `PUSH_PROVIDER_KEY` | Push notifications (optional) |
 

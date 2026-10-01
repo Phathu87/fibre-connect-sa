@@ -3,6 +3,15 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "../server/app.js";
 import { loadEnv } from "../server/config/env.js";
 import { disconnectDatabase, getDatabase } from "../server/db/client.js";
+import { DevelopmentEmailProvider, type TransactionalEmailType } from "../server/email/provider.js";
+
+function tokenFromEmail(provider: DevelopmentEmailProvider, type: TransactionalEmailType): string {
+  const message = provider.messages.filter((item) => item.type === type).at(-1);
+  const link = message?.text.split(/\s+/).find((part) => part.startsWith("https://"));
+  const token = link ? new URL(link).searchParams.get("token") : null;
+  if (!token) throw new Error(`Missing ${type} token in development email capture`);
+  return token;
+}
 
 afterEach(async () => {
   await disconnectDatabase();
@@ -123,7 +132,8 @@ describe("Supabase PostgreSQL integration", () => {
   it("enforces registration, ownership, CSRF, reset, and session revocation", async () => {
     const env = loadEnv();
     const database = getDatabase(env.DATABASE_URL);
-    const app = createApp(env);
+    const emailProvider = new DevelopmentEmailProvider();
+    const app = createApp({ ...env, NODE_ENV: "production" }, { emailProvider });
     const marker = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const email = `wp4-${marker}@example.test`;
     const otherEmail = `wp4-other-${marker}@example.test`;
@@ -139,10 +149,12 @@ describe("Supabase PostgreSQL integration", () => {
       expect(registered.statusCode).toBe(200);
       expect(registered.json().user).toMatchObject({ email, role: "USER", status: "UNVERIFIED" });
       expect(registered.body).not.toContain("passwordHash");
+      expect(registered.json()).not.toHaveProperty("developmentVerificationToken");
+      expect(emailProvider.messages[0]).toMatchObject({ to: email, type: "VERIFY_EMAIL" });
       const primaryCookies = cookieHeader(registered.headers["set-cookie"]);
       const primaryCsrf = cookieValue(registered.headers["set-cookie"], "fc_csrf");
 
-      const verification = await app.inject({ method: "POST", url: "/api/auth/verify-email", payload: { token: registered.json().developmentVerificationToken } });
+      const verification = await app.inject({ method: "POST", url: "/api/auth/verify-email", payload: { token: tokenFromEmail(emailProvider, "VERIFY_EMAIL") } });
       expect(verification.statusCode).toBe(200);
       expect(verification.json().user.status).toBe("ACTIVE");
 
@@ -174,9 +186,13 @@ describe("Supabase PostgreSQL integration", () => {
       expect(forbiddenAdmin.statusCode).toBe(403);
       expect(forbiddenAdmin.json().error.code).toBe("FORBIDDEN");
 
+      const unknownForgot = await app.inject({ method: "POST", url: "/api/auth/forgot-password", payload: { email: `unknown-${marker}@example.test` } });
       const forgot = await app.inject({ method: "POST", url: "/api/auth/forgot-password", payload: { email } });
+      expect(unknownForgot.statusCode).toBe(200);
+      expect(unknownForgot.json()).toEqual({ accepted: true });
       expect(forgot.statusCode).toBe(200);
-      const resetToken = forgot.json().developmentResetToken as string;
+      expect(forgot.json()).toEqual({ accepted: true });
+      const resetToken = tokenFromEmail(emailProvider, "RESET_PASSWORD");
       const reset = await app.inject({ method: "POST", url: "/api/auth/reset-password", payload: { token: resetToken, password: replacementPassword } });
       expect(reset.statusCode).toBe(200);
       const reused = await app.inject({ method: "POST", url: "/api/auth/reset-password", payload: { token: resetToken, password: replacementPassword } });

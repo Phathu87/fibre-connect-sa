@@ -6,6 +6,7 @@ const booleanString = z
   .transform((value) => value === "true");
 
 const optionalSecret = z.preprocess((value) => value === "" ? undefined : value, z.string().min(1).optional());
+const optionalEmail = z.preprocess((value) => value === "" ? undefined : value, z.string().email().optional());
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -19,6 +20,21 @@ const envSchema = z.object({
   SESSION_COOKIE_NAME: z.string().min(1).default("fc_session"),
   SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(720).default(168),
   BOT_PROTECTION_SECRET: optionalSecret,
+  RESEND_API_KEY: optionalSecret,
+  EMAIL_FROM_ADDRESS: optionalEmail,
+  EMAIL_FROM_NAME: z.string().trim().min(1).max(100).regex(/^[^\r\n]+$/).default("FibreConnect SA"),
+  EMAIL_PROVIDER_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(20_000).default(8_000),
+}).superRefine((env, context) => {
+  const url = new URL(env.PUBLIC_APP_URL);
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["PUBLIC_APP_URL"], message: "must use HTTP or HTTPS" });
+  }
+  if (env.NODE_ENV === "production" && url.protocol !== "https:") {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["PUBLIC_APP_URL"], message: "must use HTTPS in production" });
+  }
+  if (url.username || url.password) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["PUBLIC_APP_URL"], message: "must not contain credentials" });
+  }
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

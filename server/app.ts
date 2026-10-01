@@ -14,8 +14,9 @@ import { registerCoverageRoutes } from "./routes/coverage.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerUserDataRoutes } from "./routes/userData.js";
 import { registerPrivacyRoutes } from "./routes/privacy.js";
+import type { TransactionalEmailProvider } from "./email/provider.js";
 
-export function createApp(env: AppEnv) {
+export function createApp(env: AppEnv, options: { emailProvider?: TransactionalEmailProvider } = {}) {
   const app = Fastify({
     logger: {
       level: env.LOG_LEVEL,
@@ -63,7 +64,7 @@ export function createApp(env: AppEnv) {
 
   app.register(registerCatalogueRoutes, env);
   app.register(registerCoverageRoutes, env);
-  app.register(registerAuthRoutes, env);
+  app.register(registerAuthRoutes, options.emailProvider ? { env, emailProvider: options.emailProvider } : { env });
   app.register(registerUserDataRoutes, env);
   app.register(registerPrivacyRoutes, env);
 

@@ -9,8 +9,8 @@ const hour = 60 * 60 * 1000;
 export class AuthService {
   constructor(private readonly repository: Repository, private readonly delivery: AuthDelivery, private readonly sessionTtlHours: number, private readonly exposeDevelopmentTokens: boolean) {}
 
-  async register(input: { email: string; password: string; firstName: string; lastName: string; phone?: string | undefined }) {
-    this.requireDelivery();
+  async register(input: { email: string; password: string; firstName: string; lastName: string; phone?: string | undefined }, requestId?: string) {
+    this.requireConfiguredDelivery();
     const email = input.email.trim().toLowerCase();
     const passwordHash = await hashPassword(input.password);
     let user;
@@ -20,7 +20,7 @@ export class AuthService {
       throw error;
     }
     const verificationToken = await this.issueToken(user.id, "EMAIL_VERIFICATION", 24);
-    await this.delivery.deliverVerification(email, verificationToken.rawToken);
+    this.requireDelivered(await this.delivery.deliverVerification(email, verificationToken.rawToken, requestId));
     return { user, session: await this.createSession(user.id), ...(this.exposeDevelopmentTokens ? { developmentVerificationToken: verificationToken.rawToken } : {}) };
   }
 
@@ -34,12 +34,13 @@ export class AuthService {
     return { user, session: await this.createSession(credentials.id) };
   }
 
-  async forgotPassword(emailInput: string) {
-    this.requireDelivery();
+  async forgotPassword(emailInput: string, requestId?: string) {
+    this.requireConfiguredDelivery();
     const credentials = await this.repository.findCredentialsByEmail(emailInput.trim().toLowerCase());
     if (!credentials || credentials.status === "DISABLED") return {};
     const reset = await this.issueToken(credentials.id, "PASSWORD_RESET", 1);
-    await this.delivery.deliverPasswordReset(credentials.email, reset.rawToken);
+    const delivery = await this.delivery.deliverPasswordReset(credentials.email, reset.rawToken, requestId);
+    if (delivery.status === "NOT_CONFIGURED") this.requireDelivered(delivery);
     return this.exposeDevelopmentTokens ? { developmentResetToken: reset.rawToken } : {};
   }
 
@@ -56,10 +57,10 @@ export class AuthService {
     return user;
   }
 
-  async resendVerification(userId: string, email: string) {
-    this.requireDelivery();
+  async resendVerification(userId: string, email: string, requestId?: string) {
+    this.requireConfiguredDelivery();
     const verification = await this.issueToken(userId, "EMAIL_VERIFICATION", 24);
-    await this.delivery.deliverVerification(email, verification.rawToken);
+    this.requireDelivered(await this.delivery.deliverVerification(email, verification.rawToken, requestId));
     return this.exposeDevelopmentTokens ? { developmentVerificationToken: verification.rawToken } : {};
   }
 
@@ -77,8 +78,13 @@ export class AuthService {
     return { rawToken };
   }
 
-  private requireDelivery() {
-    if (!this.delivery.configured) throw new AppError(503, "AUTH_EMAIL_UNAVAILABLE", "Authentication email delivery is not configured");
+  private requireConfiguredDelivery() {
+    if (!this.delivery.configured) throw new AppError(503, "EMAIL_PROVIDER_NOT_CONFIGURED", "Transactional email delivery is not configured");
+  }
+
+  private requireDelivered(result: Awaited<ReturnType<AuthDelivery["deliverVerification"]>>) {
+    if (result.status === "NOT_CONFIGURED") this.requireConfiguredDelivery();
+    if (result.status !== "SENT") throw new AppError(503, "EMAIL_DELIVERY_FAILED", "Transactional email delivery is temporarily unavailable");
   }
 }
 

@@ -148,12 +148,13 @@ No frontend code currently obtains or sends a Turnstile token. Setting the secre
 
 ## Transactional Email
 
-Current production mode is intentionally unconfigured. Under `NODE_ENV=production`, registration, forgot-password, and resend-verification call `requireDelivery()` and return 503 before delivery work because `UnconfiguredProductionAuthDelivery.configured` is false. Login for an existing verified account can still work.
+Phase 8.3A-2 added a provider-neutral transactional email boundary, safe verification/reset templates, a deterministic development adapter, and a direct HTTPS Resend production adapter. Registration, password reset, verification resend, trusted-link generation, bounded provider timeout, and safe delivery logging are implemented at code level.
 
-- Portfolio/public-demo blocker: YES if public account creation/recovery is in scope, as it is in the current UI and routes.
-- Commercial-release blocker: YES.
+- Code-level blocker: **RESOLVED AT CODE LEVEL / EXTERNAL CONFIGURATION REQUIRED**.
+- Portfolio/public-demo external blocker: YES if public account creation/recovery is in scope.
+- Commercial-release external blocker: YES until a provider account, credential, verified sender/domain, and production configuration are validated.
 
-No implemented provider or environment-variable name exists, so this cannot be solved by adding a Netlify secret alone.
+Required names are `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS`, optional `EMAIL_FROM_NAME`, and optional `EMAIL_PROVIDER_TIMEOUT_MS`. Missing provider configuration fails with `EMAIL_PROVIDER_NOT_CONFIGURED`; delivery failures are normalized without exposing vendor response bodies.
 
 ## Logging
 
@@ -200,7 +201,7 @@ Resolved in Phase 8.3A-1:
 
 Remaining blockers:
 
-1. Production transactional email is unimplemented, so public registration and recovery routes return 503.
+1. Transactional email is code complete, but the Resend account, API credential, verified sender/domain, and Netlify production configuration remain external blockers.
 2. Preview/branch environment isolation is undefined and could expose the production database to preview code.
 3. Final production origin values and account-level secret scopes are not configured or validated.
 4. A platform-native Netlify build/deploy remains unvalidated because no project is linked.

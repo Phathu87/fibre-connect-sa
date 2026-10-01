@@ -6,6 +6,8 @@ const env: AppEnv = {
   NODE_ENV: "test",
   SESSION_COOKIE_NAME: "fc_session",
   SESSION_TTL_HOURS: 168,
+  EMAIL_FROM_NAME: "FibreConnect SA",
+  EMAIL_PROVIDER_TIMEOUT_MS: 8_000,
   HOST: "127.0.0.1",
   PORT: 3000,
   LOG_LEVEL: "silent",
@@ -104,5 +106,14 @@ describe("HTTP foundation", () => {
     expect(response.statusCode).toBe(400);
     expect(response.json().error.code).toBe("BOT_VERIFICATION_REQUIRED");
     expect(response.body).not.toContain("test-secret");
+  });
+
+  it("fails with a controlled error when production email is not configured", async () => {
+    const app = createApp({ ...env, NODE_ENV: "production" });
+    apps.push(app);
+    const response = await app.inject({ method: "POST", url: "/api/auth/register", payload: { email: "person@example.test", password: "A sufficiently long password", firstName: "Test", lastName: "Person" } });
+    expect(response.statusCode).toBe(503);
+    expect(response.json().error.code).toBe("EMAIL_PROVIDER_NOT_CONFIGURED");
+    expect(response.body).not.toContain("password");
   });
 });
