@@ -17,11 +17,19 @@ Scope: read-only repository and dependency analysis. No Netlify site, environmen
 
 ## Netlify Build
 
-`netlify.toml` configures `npm run build`. That command runs only `vite build`, which is the correct frontend production compiler but is insufficient for the complete Netlify application in a clean checkout.
+`netlify.toml` configures `npm run build`. Phase 8.3A-1 changed that repository command to run `npm run db:generate && vite build`, so it now produces both the ignored Prisma client required by the function and the Vite frontend from a clean checkout.
 
-The generated Prisma client is written to `src/generated/prisma`, is ignored by Git, and is not tracked. No `prebuild`, `postinstall`, or other lifecycle script runs `prisma generate`. The Fastify runtime imports `src/generated/prisma/client.js`, so a clean Netlify build has no guaranteed generated client for function bundling. This is a deployment blocker.
+The generated Prisma client remains correctly ignored and untracked at `src/generated/prisma`. Generation does not run migrations or require database connectivity; `prisma.config.ts` supplies its local fallback URL when deployment database variables are absent.
 
-The repository also has no `engines.node`, `.nvmrc`, `.node-version`, or `NODE_VERSION` setting. CI uses Node 22, while the Netlify build/runtime version is not pinned. Netlify documents that a function's default Node runtime follows the build Node version. Pinning the validated major is required before deployment.
+Node is now pinned to `22.x` in `package.json`, while `[build.environment] NODE_VERSION = "22"` pins the Netlify build. Netlify Functions inherit the build Node version by default, and GitHub Actions already uses Node 22.
+
+### Prisma clean-build generation
+
+**RESOLVED.** A clean `npm ci` followed directly by `npm run build`, with both `dist` and `src/generated/prisma` absent beforehand, generated Prisma Client 7.10.0 and completed the Vite build.
+
+### Node 22 runtime pinning
+
+**RESOLVED.** Local validation used Node 22.21.0, CI specifies Node 22, package metadata requires `22.x`, and Netlify repository configuration selects Node 22.
 
 No Netlify build plugins are configured.
 
@@ -121,9 +129,9 @@ The release runbook requires checked-in migrations to be applied with the migrat
 
 ## Function Bundling
 
-Fastify, Prisma Client, `@prisma/adapter-pg`, `pg`, and route/repository modules are reachable from the function entry and should be traced by esbuild. `argon2` is explicitly externalized because it includes native code. The critical unresolved bundling issue is not package tracing but the absent generated Prisma client in a clean checkout.
+Fastify, Prisma Client, `@prisma/adapter-pg`, `pg`, and route/repository modules are reachable from the function entry and are resolved by server typechecking and direct execution of the TypeScript function entry. `argon2` is explicitly externalized because it includes native code. The generated Prisma client is now present before Netlify's function-bundling stage.
 
-The repository has not pinned the Netlify build/runtime Node version and has no clean Netlify bundle artifact from the current baseline. Both require Phase 8.3A validation.
+An esbuild dependency-trace bundle of the function entry completed. A platform-native `netlify build` could not start because this repository is not linked to a Netlify project; the CLI requested `netlify init`, `netlify deploy`, or `netlify link`, all explicitly outside Phase 8.3A-1. The real function handler nevertheless resolved and returned 200 for `/api/health` with a request ID under production-mode placeholder configuration. Deployed bundling remains unvalidated until an approved site-link phase.
 
 ## Health and Readiness Routing
 
@@ -185,21 +193,25 @@ No `vercel.json`, `.vercel` metadata, Vercel serverless handler, Vercel package,
 
 ## Deployment Blockers
 
-1. A clean Netlify build does not generate the ignored Prisma client required by the function bundle.
-2. Production transactional email is unimplemented, so public registration and recovery routes return 503.
-3. Netlify build/function Node version is unpinned despite CI validating Node 22.
-4. Preview/branch environment isolation is undefined and could expose the production database to preview code.
-5. Final production origin values and account-level secret scopes are not configured or validated.
+Resolved in Phase 8.3A-1:
+
+- Prisma clean-build generation: **RESOLVED**.
+- Node 22 runtime pinning: **RESOLVED**.
+
+Remaining blockers:
+
+1. Production transactional email is unimplemented, so public registration and recovery routes return 503.
+2. Preview/branch environment isolation is undefined and could expose the production database to preview code.
+3. Final production origin values and account-level secret scopes are not configured or validated.
+4. A platform-native Netlify build/deploy remains unvalidated because no project is linked.
 
 Static CSP/HSTS coverage and Turnstile client integration are required hardening/commercial gates, but they do not independently prevent a deliberately constrained portfolio deployment once the blockers above are resolved and limitations are explicit.
 
 ## Recommended Next Phase
 
-**Phase 8.3A - Netlify Build and Runtime Blocker Remediation**
+**Phase 8.3A-2 - Transactional Email Production Foundation**
 
-That phase should guarantee Prisma generation in clean builds, pin the validated Node runtime, implement or deliberately scope production auth email behavior, define preview isolation, align deployment documentation, and validate a local Netlify production-context bundle. It must not deploy or configure account secrets without separate approval.
-
-Do not proceed to deployment. After 8.3A, return to the Stage 8 gate before Phase 8.4.
+Do not proceed to deployment. Transactional email, preview isolation, production origins, account-level secret scopes, and linked-site validation remain unresolved.
 
 ## Platform References
 
