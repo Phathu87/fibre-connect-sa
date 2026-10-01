@@ -23,15 +23,22 @@ The function bridge reuses the existing Fastify composition through `app.inject(
 ## Required Netlify Variables
 
 - `NODE_ENV=production`
-- `DATABASE_URL`
+- `APP_DEPLOYMENT_CONTEXT=production`
+- `DATABASE_DEPLOYMENT_CONTEXT=production`
+- `DATABASE_URL` limited to production and Functions scope
 - `PUBLIC_APP_URL` set to the final Netlify/custom canonical URL
 - `CORS_ORIGINS` set to the exact canonical URL
 - `TRUST_PROXY=true`
 - `SESSION_COOKIE_NAME=fc_session`
 - `SESSION_TTL_HOURS=168` or the approved production duration
 - `BOT_PROTECTION_SECRET` after the Turnstile client integration is enabled
+- `RESEND_API_KEY` limited to production and Functions scope
+- `EMAIL_FROM_ADDRESS` after sender/domain verification
+- optional `EMAIL_FROM_NAME` and `EMAIL_PROVIDER_TIMEOUT_MS`
 
 `DIRECT_URL` is required only for migration jobs and must not be exposed to the frontend.
+
+Deploy Preview and branch Function variables must not inherit production database, Resend, or Turnstile secrets. The API fails closed unless previews use `APP_DEPLOYMENT_CONTEXT=preview` with `DATABASE_DEPLOYMENT_CONTEXT=preview`, or branch deploys use matching `branch` values, plus an explicitly isolated non-production `DATABASE_URL` and exact HTTPS origins. Leave preview/branch APIs disabled when no isolated database exists.
 
 ## Account-Level Work
 

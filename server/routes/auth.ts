@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
-import type { AppEnv } from "../config/env.js";
+import { deploymentEnvironment, type AppEnv } from "../config/env.js";
 import { TransactionalAuthDelivery } from "../auth/delivery.js";
 import { createAuthMiddleware } from "../auth/middleware.js";
 import { ownsResource } from "../auth/permissions.js";
@@ -9,7 +9,7 @@ import { AppError } from "../lib/errors.js";
 import { createAuthRepository } from "../repositories/auth.js";
 import { AuthService } from "../services/auth.js";
 import { createBotProtection } from "../security/botProtection.js";
-import { createProductionEmailProvider, DevelopmentEmailProvider, type TransactionalEmailProvider } from "../email/provider.js";
+import { createProductionEmailProvider, DevelopmentEmailProvider, UnconfiguredEmailProvider, type TransactionalEmailProvider } from "../email/provider.js";
 
 const email = z.string().trim().email().max(254);
 const password = z.string().min(12).max(128);
@@ -24,7 +24,14 @@ const statusBody = z.object({ status: z.enum(["ACTIVE", "UNVERIFIED", "SUSPENDED
 export async function registerAuthRoutes(app: FastifyInstance, options: { env: AppEnv; emailProvider?: TransactionalEmailProvider }) {
   const { env } = options;
   const repository = createAuthRepository(getDatabase(env.DATABASE_URL));
-  const provider = options.emailProvider ?? (env.NODE_ENV === "production" ? createProductionEmailProvider(env) : new DevelopmentEmailProvider());
+  const deployment = deploymentEnvironment(env);
+  const provider = options.emailProvider ?? (
+    deployment === "production"
+      ? createProductionEmailProvider(env)
+      : deployment === "local" || deployment === "test"
+        ? new DevelopmentEmailProvider()
+        : new UnconfiguredEmailProvider()
+  );
   const delivery = new TransactionalAuthDelivery(provider, env.PUBLIC_APP_URL, app.log);
   const service = new AuthService(repository, delivery, env.SESSION_TTL_HOURS, env.NODE_ENV !== "production");
   const auth = createAuthMiddleware(repository, env);

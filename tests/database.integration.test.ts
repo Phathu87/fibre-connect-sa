@@ -149,6 +149,9 @@ describe("Supabase PostgreSQL integration", () => {
       expect(registered.statusCode).toBe(200);
       expect(registered.json().user).toMatchObject({ email, role: "USER", status: "UNVERIFIED" });
       expect(registered.body).not.toContain("passwordHash");
+      expect(String(registered.headers["set-cookie"])).toContain("Secure");
+      expect(String(registered.headers["set-cookie"])).toContain("SameSite=Strict");
+      expect(String(registered.headers["set-cookie"])).not.toContain("Domain=");
       expect(registered.json()).not.toHaveProperty("developmentVerificationToken");
       expect(emailProvider.messages[0]).toMatchObject({ to: email, type: "VERIFY_EMAIL" });
       const primaryCookies = cookieHeader(registered.headers["set-cookie"]);

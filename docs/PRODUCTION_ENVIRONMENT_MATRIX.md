@@ -2,39 +2,50 @@
 
 Date: 2026-10-01
 
-Scope: variables actually consumed by the current FibreConnect repository. No values are recorded here.
+Scope: variables actually consumed by FibreConnect source or deployment tooling. Values are intentionally excluded.
 
-| Variable | Consumer | Secret | Required | Phase | Netlify requirement | Failure behavior when absent |
-| --- | --- | --- | --- | --- | --- | --- |
-| `DATABASE_URL` | Server / Prisma Client | Yes | Required | Function runtime | Required; Functions scope, production context | Environment validation fails and the function cannot initialize |
-| `DIRECT_URL` | Prisma CLI configuration | Yes | Required for production migrations, not request runtime | Migration/release tooling | Not required by the deployed function; required only in the controlled migration environment | Prisma CLI falls back to `DATABASE_URL`, which is inappropriate when a direct/session migration connection is required |
-| `PUBLIC_APP_URL` | Server environment schema | No | Required | Function runtime | Required in production context | Environment validation fails and the function cannot initialize |
-| `CORS_ORIGINS` | Fastify CORS | No | Required | Function runtime | Required; exact canonical browser origin(s) | Environment validation fails; incorrect values reject browser API requests with 403 |
-| `NODE_ENV` | Server, cookies, auth-delivery selection | No | Operationally required as `production` | Build and function runtime | Required for production behavior | Defaults to `development`, producing non-Secure cookies and development auth behavior; unsafe for deployment |
-| `TRUST_PROXY` | Fastify proxy/IP handling | No | Operationally required as `true` behind Netlify | Function runtime | Required for intended proxy behavior | Defaults to `false`; client IP-dependent logs, limits, and Turnstile context may reflect proxy topology incorrectly |
-| `LOG_LEVEL` | Fastify/Pino | No | Optional | Function runtime | Optional | Defaults to `info` |
-| `SESSION_COOKIE_NAME` | Auth middleware/routes | No | Optional | Function runtime | Optional | Defaults to `fc_session` |
-| `SESSION_TTL_HOURS` | Auth service | No | Optional | Function runtime | Optional | Defaults to 168 hours; invalid values fail environment validation |
-| `BOT_PROTECTION_SECRET` | Turnstile server adapter | Yes | Optional for portfolio; required only when Turnstile is enabled | Function runtime | Optional; Functions scope and production context only | Bot verification is disabled; rate limits remain. If configured before client token integration, protected public mutations fail |
-| `RESEND_API_KEY` | Resend transactional email provider | Yes | Required for production authentication email | Function runtime | Required; Functions scope, production context | Provider reports `NOT_CONFIGURED`; registration and verification resend return controlled 503 responses |
-| `EMAIL_FROM_ADDRESS` | Transactional email sender | No | Required for production authentication email | Function runtime | Required after sender/domain verification | Provider reports `NOT_CONFIGURED`; no external delivery is attempted |
-| `EMAIL_FROM_NAME` | Transactional email sender display name | No | Optional | Function runtime | Optional | Defaults to `FibreConnect SA` |
-| `EMAIL_PROVIDER_TIMEOUT_MS` | Transactional email HTTPS timeout | No | Optional | Function runtime | Optional | Defaults to 8000 ms; invalid values fail environment validation |
-| `HOST` | Standalone Fastify server only | No | Optional / not used by Netlify handler | Standalone runtime | Not required for Netlify Functions | Defaults to `127.0.0.1`; the function handler does not call `listen()` |
-| `PORT` | Standalone Fastify server only | No | Optional / not used by Netlify handler | Standalone runtime | Not required for Netlify Functions | Defaults to 3000; the function handler does not call `listen()` |
-| `VITE_API_BASE_URL` | Browser API client | No | Optional | Frontend build time | Leave unset for same-origin `/api`, unless architecture changes | Defaults to `/api`, which is the required Netlify same-origin path |
+Legend: R = required, O = optional, - = not used. Preview and branch entries describe API-enabled deployments; without the listed non-production configuration, the static frontend may build but the Function fails closed.
 
-## Explicit Absences
+| Variable | Consumer | Secret | Local | CI | Production | Preview | Branch | Migration only | Required / default | Failure behavior |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `NODE_ENV` | Server, cookies, provider selection | No | O (`development`) | R (`test`) | R (`production`) | R (`production`) | R (`production`) | - | Defaults to `development` | Deployed runtime without `production` can use unsafe cookie/runtime behavior |
+| `APP_DEPLOYMENT_CONTEXT` | Server deployment classifier | No | O (`local`) | O (`test`) | R (`production`) | R (`preview`) | R (`branch`) | - | No deployed default | Production-mode environment validation fails when absent |
+| `DATABASE_DEPLOYMENT_CONTEXT` | Database isolation guard | No | - | - | R (`production`) | R (`preview`) | R (`branch`) | - | No safe default | Mismatch/absence fails initialization before Prisma use |
+| `DATABASE_URL` | Prisma Client, seed script | Yes | R for API/data work | R for PostgreSQL job | R, production Functions context | R, isolated non-production value only | R, isolated non-production value only | No | No default in server runtime | Environment validation fails; Function returns controlled 503 |
+| `DIRECT_URL` | `prisma.config.ts` | Yes | O for local migrations | R for migration rehearsal | - | - | - | Yes, R for release migrations | Falls back to `DATABASE_URL` in Prisma tooling only | Migration connection may be unsuitable; never used by request runtime |
+| `PUBLIC_APP_URL` | Trusted auth/email link origin | No | R | R in PostgreSQL job | R, exact final HTTPS origin | R, exact preview HTTPS origin | R, exact branch HTTPS origin | - | No default | Invalid/missing value fails initialization; request-host mismatch returns 503 |
+| `CORS_ORIGINS` | Fastify credentialed CORS | No | R; loopback origins added | R | R, exact HTTPS origin list | R, exact preview HTTPS origin | R, exact branch HTTPS origin | - | No wildcard/default | Invalid config fails initialization; unlisted requests receive 403 |
+| `TRUST_PROXY` | Fastify request IP/proxy handling | No | O (`false`) | O (`false`) | R (`true`) | R (`true`) | R (`true`) | - | Defaults to `false` | Proxy-derived IP behavior may be incorrect |
+| `LOG_LEVEL` | Fastify/Pino | No | O (`info`/`debug`) | O (`silent`) | O (`info`) | O (`info`) | O (`info`) | - | Defaults to `info` | Invalid values fail validation |
+| `HOST` | Standalone server | No | O | - | - | - | - | - | `127.0.0.1` | Invalid values fail validation |
+| `PORT` | Standalone server | No | O | - | - | - | - | - | `3000` | Invalid values fail validation |
+| `SESSION_COOKIE_NAME` | Auth middleware/routes | No | O | O | O | O | O | - | `fc_session` | Invalid values fail validation |
+| `SESSION_TTL_HOURS` | Auth service | No | O | O | O | O | O | - | `168` | Invalid values fail validation |
+| `BOT_PROTECTION_SECRET` | Turnstile server adapter | Yes | O | - | O only after client integration | Must be absent unless dedicated preview client config exists | Must be absent unless dedicated branch client config exists | - | Empty disables Turnstile | When set, protected routes require valid client tokens |
+| `RESEND_API_KEY` | Resend provider | Yes | - | - | R for live auth email | Must be absent; preview email is disabled | Must be absent; branch email is disabled | - | No default | Production provider reports not configured; non-production deploys never select Resend |
+| `EMAIL_FROM_ADDRESS` | Resend sender | No | - | - | R for live auth email | - | - | - | No default | Production provider reports not configured |
+| `EMAIL_FROM_NAME` | Resend sender | No | O | O | O | O | O | - | `FibreConnect SA` | Invalid values fail validation |
+| `EMAIL_PROVIDER_TIMEOUT_MS` | Email HTTPS adapter | No | O | O | O | O | O | - | `8000` | Invalid values fail validation |
+| `VITE_API_BASE_URL` | Browser API client | No | O | O | O, leave unset | O, leave unset | O, leave unset | - | Same-origin `/api` | Explicit value changes browser API target; never place secrets here |
 
-- No authentication/session signing-secret variable is used. Sessions use opaque random tokens whose hashes are stored in PostgreSQL.
-- Transactional email uses a direct HTTPS Resend adapter. Production delivery remains externally blocked until a Resend account, API credential, verified sender/domain, and Netlify function-scoped production variables are configured.
-- No analytics or monitoring environment variable is consumed by current source.
-- `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` appear in `.env.example` but are not consumed by the application. Runtime database access uses `DATABASE_URL` only.
-- Names in `ENVIRONMENT_VARIABLES.md` such as `API_BASE_URL`, `AUTH_SECRET`, `CSRF_SECRET`, unrelated provider keys, and analytics IDs are planning placeholders unless added to actual source in a future approved phase.
+## Platform Variables
 
-## Netlify Context Rules
+- Netlify `CONTEXT` (`production`, `deploy-preview`, `branch-deploy`, `dev`) and `DEPLOY_PRIME_URL` are automatic build variables, but Netlify does not expose them as read-only Function runtime variables.
+- Configure `APP_DEPLOYMENT_CONTEXT` and `DATABASE_DEPLOYMENT_CONTEXT` through Netlify contextual values with Functions scope. Do not place them in `netlify.toml` because file-declared environment variables are not available to Functions runtime.
+- `URL`, `SITE_NAME`, and `SITE_ID` are available to Functions, but `URL` is the main site address and is not a reliable preview/branch classifier.
 
-- Production secrets must be limited to the production deploy context and Functions scope where supported.
-- Deploy Previews and branch deploys must not inherit production `DATABASE_URL`, `DIRECT_URL`, `BOT_PROTECTION_SECRET`, or `RESEND_API_KEY`.
-- Preview backends require isolated non-production credentials and matching preview CORS policy; otherwise backend execution should fail closed or previews should be disabled.
-- Never expose server secrets through a `VITE_*` name because Vite embeds those variables in the browser bundle.
+## Context Policy
+
+- Local: local database, HTTP loopback origins, development capture email, and non-Secure cookies are allowed.
+- CI: test mode and disposable PostgreSQL only. No provider credentials.
+- Production: exact HTTPS origin, production-labelled runtime database, Secure host-only cookies, and production-only Resend credentials.
+- Preview: Policy B by default. The API is blocked unless an isolated database, `APP_DEPLOYMENT_CONTEXT=preview`, `DATABASE_DEPLOYMENT_CONTEXT=preview`, and exact preview origins are explicitly configured. External email remains disabled.
+- Branch: same fail-closed policy with context value `branch` and an isolated branch/staging database.
+- Migration tooling: `DIRECT_URL` exists only in the controlled release environment; Netlify Functions do not need it.
+
+## Exposure Rules
+
+- Never expose `DATABASE_URL`, `DIRECT_URL`, `RESEND_API_KEY`, or `BOT_PROTECTION_SECRET` through `VITE_*`, build output, documentation values, logs, or frontend scope.
+- Netlify account variables default to all contexts/scopes unless narrowed. Production secrets must be production-context and Functions-scoped where the plan supports scopes.
+- `VITE_API_BASE_URL` is the only consumed frontend variable. Same-origin `/api` is the production, preview, and branch default.
+- `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` remain unused placeholders in `.env.example`; runtime database access uses `DATABASE_URL`.

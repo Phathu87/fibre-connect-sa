@@ -101,12 +101,14 @@ The authoritative name-only inventory is in `docs/PRODUCTION_ENVIRONMENT_MATRIX.
 Required for production function startup/behavior:
 
 - `DATABASE_URL`
+- `APP_DEPLOYMENT_CONTEXT=production`
+- `DATABASE_DEPLOYMENT_CONTEXT=production`
 - `PUBLIC_APP_URL`
 - `CORS_ORIGINS`
 - `NODE_ENV=production`
 - `TRUST_PROXY=true`
 
-Secret values are `DATABASE_URL` and, only when enabled, `BOT_PROTECTION_SECRET`. `DIRECT_URL` is a migration/release secret and is not required by the production function runtime. No email-provider, analytics, `AUTH_SECRET`, or `CSRF_SECRET` variable is consumed by current code. The broader `ENVIRONMENT_VARIABLES.md` list is aspirational and stale where it implies those names are implemented.
+Secret values are `DATABASE_URL`, `RESEND_API_KEY`, and, only when enabled, `BOT_PROTECTION_SECRET`. `DIRECT_URL` is a migration/release secret and is not required by the production function runtime. `APP_DEPLOYMENT_CONTEXT` and `DATABASE_DEPLOYMENT_CONTEXT` are non-secret but mandatory deployment labels. No analytics, `AUTH_SECRET`, or `CSRF_SECRET` variable is consumed by current code.
 
 ## Prisma Serverless Model
 
@@ -164,9 +166,11 @@ Redaction covers authorization, cookies, set-cookie, password, token, and reset-
 
 ## Preview-Environment Risk
 
-`netlify.toml` defines no deploy-context overrides. If Netlify variables are configured globally, Deploy Previews and branch deploys can inherit the production `DATABASE_URL` and function secrets. Preview code could then read or mutate production data, while preview origins would also fail the production CORS allowlist.
+**RESOLVED AT CODE/CONFIG LEVEL - ACCOUNT CONFIGURATION REQUIRED**
 
-Netlify supports context-specific values and scopes. Production database credentials must be production-context/function-scoped; previews should be disabled for backend execution, receive isolated non-production credentials, or fail closed without database secrets. This account-level policy is a deployment blocker until explicitly configured and verified.
+Production-mode startup now requires explicit matching application/database deployment labels. Preview and branch Functions fail closed before Prisma initialization unless they receive matching labels, an isolated non-production `DATABASE_URL`, and exact HTTPS origins. `/api/ready` returns a generic 503 for invalid configuration. A request-host/trusted-origin check also rejects preview requests carrying an inherited production `PUBLIC_APP_URL`. Preview/branch contexts cannot select the external email provider.
+
+Netlify's automatic `CONTEXT` is build-only and is not available as a read-only Function variable. The account must therefore assign contextual Functions values to `APP_DEPLOYMENT_CONTEXT` and `DATABASE_DEPLOYMENT_CONTEXT`. Production credentials must be production-context/Functions-scoped; preview/branch APIs remain disabled until isolated credentials are deliberately supplied. No secrets or context values were added to `netlify.toml`.
 
 ## Dependency Drift Relevance
 
@@ -202,7 +206,7 @@ Resolved in Phase 8.3A-1:
 Remaining blockers:
 
 1. Transactional email is code complete, but the Resend account, API credential, verified sender/domain, and Netlify production configuration remain external blockers.
-2. Preview/branch environment isolation is undefined and could expose the production database to preview code.
+2. Preview/branch isolation is resolved at code/config level; Netlify contextual values and any isolated non-production database remain account-level work.
 3. Final production origin values and account-level secret scopes are not configured or validated.
 4. A platform-native Netlify build/deploy remains unvalidated because no project is linked.
 
@@ -210,9 +214,9 @@ Static CSP/HSTS coverage and Turnstile client integration are required hardening
 
 ## Recommended Next Phase
 
-**Phase 8.3A-2 - Transactional Email Production Foundation**
+**Phase 8.4 - Production Infrastructure and External Configuration Plan**
 
-Do not proceed to deployment. Transactional email, preview isolation, production origins, account-level secret scopes, and linked-site validation remain unresolved.
+Do not proceed to deployment. Production origins, account-level contextual values/secrets, Resend external configuration, and linked-site validation remain unresolved.
 
 ## Platform References
 

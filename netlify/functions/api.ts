@@ -1,5 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { createApp } from "../../server/app.js";
-import { loadEnv } from "../../server/config/env.js";
+import { EnvironmentConfigurationError, loadEnv } from "../../server/config/env.js";
 
 let app: ReturnType<typeof createApp> | undefined;
 
@@ -14,7 +15,26 @@ type NetlifyEvent = {
 type InjectMethod = "DELETE" | "GET" | "HEAD" | "OPTIONS" | "PATCH" | "POST" | "PUT";
 
 export async function handler(event: NetlifyEvent) {
-  app ??= createApp(loadEnv());
+  try {
+    const env = loadEnv();
+    const requestHost = Object.entries(event.headers).find(([name]) => name.toLowerCase() === "host")?.[1];
+    if (requestHost && requestHost !== new URL(env.PUBLIC_APP_URL).host) {
+      throw new EnvironmentConfigurationError(["PUBLIC_APP_URL"]);
+    }
+    app ??= createApp(env);
+  } catch (error) {
+    if (!(error instanceof EnvironmentConfigurationError)) throw error;
+    const requestId = randomUUID();
+    const isReadiness = event.path === "/api/ready";
+    return {
+      statusCode: 503,
+      headers: { "content-type": "application/json; charset=utf-8", "x-request-id": requestId },
+      multiValueHeaders: {},
+      body: JSON.stringify(isReadiness
+        ? { status: "not_ready", reason: "environment_configuration", requestId }
+        : { error: { code: "ENVIRONMENT_NOT_READY", message: "Service environment is not ready", requestId } }),
+    };
+  }
   await app.ready();
   const payload = event.body ? (event.isBase64Encoded ? Buffer.from(event.body, "base64") : event.body) : undefined;
   const response = await app.inject({

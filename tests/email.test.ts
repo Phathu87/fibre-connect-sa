@@ -44,9 +44,12 @@ describe("transactional email providers", () => {
   it("fails honestly when production configuration is absent", async () => {
     const env = parseEnv({
       NODE_ENV: "production",
+      APP_DEPLOYMENT_CONTEXT: "production",
       DATABASE_URL: "postgresql://user:password@localhost:5432/fibreconnect",
+      DATABASE_DEPLOYMENT_CONTEXT: "production",
       PUBLIC_APP_URL: "https://fibreconnect.example",
       CORS_ORIGINS: "https://fibreconnect.example",
+      TRUST_PROXY: "true",
     });
     const provider = createProductionEmailProvider(env);
     expect(provider).toBeInstanceOf(UnconfiguredEmailProvider);
@@ -102,9 +105,12 @@ describe("trusted email URL configuration", () => {
   it("requires HTTPS for production public links", () => {
     expect(() => parseEnv({
       NODE_ENV: "production",
+      APP_DEPLOYMENT_CONTEXT: "production",
       DATABASE_URL: "postgresql://user:password@localhost:5432/fibreconnect",
+      DATABASE_DEPLOYMENT_CONTEXT: "production",
       PUBLIC_APP_URL: "http://fibreconnect.example",
       CORS_ORIGINS: "https://fibreconnect.example",
+      TRUST_PROXY: "true",
     })).toThrow("Invalid environment configuration: PUBLIC_APP_URL");
   });
 });

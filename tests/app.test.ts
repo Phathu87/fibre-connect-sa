@@ -109,11 +109,27 @@ describe("HTTP foundation", () => {
   });
 
   it("fails with a controlled error when production email is not configured", async () => {
-    const app = createApp({ ...env, NODE_ENV: "production" });
+    const app = createApp({ ...env, NODE_ENV: "production", APP_DEPLOYMENT_CONTEXT: "production", DATABASE_DEPLOYMENT_CONTEXT: "production" });
     apps.push(app);
     const response = await app.inject({ method: "POST", url: "/api/auth/register", payload: { email: "person@example.test", password: "A sufficiently long password", firstName: "Test", lastName: "Person" } });
     expect(response.statusCode).toBe(503);
     expect(response.json().error.code).toBe("EMAIL_PROVIDER_NOT_CONFIGURED");
     expect(response.body).not.toContain("password");
+  });
+
+  it("does not activate external transactional email in preview deployments", async () => {
+    const app = createApp({
+      ...env,
+      NODE_ENV: "production",
+      APP_DEPLOYMENT_CONTEXT: "preview",
+      DATABASE_DEPLOYMENT_CONTEXT: "preview",
+      RESEND_API_KEY: "preview-must-not-use-this-key",
+      EMAIL_FROM_ADDRESS: "preview@example.test",
+    });
+    apps.push(app);
+    const response = await app.inject({ method: "POST", url: "/api/auth/register", payload: { email: "person@example.test", password: "A sufficiently long password", firstName: "Test", lastName: "Person" } });
+    expect(response.statusCode).toBe(503);
+    expect(response.json().error.code).toBe("EMAIL_PROVIDER_NOT_CONFIGURED");
+    expect(response.body).not.toContain("preview-must-not-use-this-key");
   });
 });
