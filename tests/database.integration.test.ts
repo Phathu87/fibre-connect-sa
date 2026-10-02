@@ -5,9 +5,9 @@ import { loadEnv } from "../server/config/env.js";
 import { disconnectDatabase, getDatabase } from "../server/db/client.js";
 import { DevelopmentEmailProvider, type TransactionalEmailType } from "../server/email/provider.js";
 
-function tokenFromEmail(provider: DevelopmentEmailProvider, type: TransactionalEmailType): string {
-  const message = provider.messages.filter((item) => item.type === type).at(-1);
-  const link = message?.text.split(/\s+/).find((part) => part.startsWith("https://"));
+function tokenFromEmail(provider: DevelopmentEmailProvider, type: TransactionalEmailType, recipient: string): string {
+  const message = provider.messages.filter((item) => item.type === type && item.to === recipient).at(-1);
+  const link = message?.text.split(/\s+/).find((part) => /^https?:\/\//.test(part));
   const token = link ? new URL(link).searchParams.get("token") : null;
   if (!token) throw new Error(`Missing ${type} token in development email capture`);
   return token;
@@ -157,7 +157,7 @@ describe("Supabase PostgreSQL integration", () => {
       const primaryCookies = cookieHeader(registered.headers["set-cookie"]);
       const primaryCsrf = cookieValue(registered.headers["set-cookie"], "fc_csrf");
 
-      const verification = await app.inject({ method: "POST", url: "/api/auth/verify-email", payload: { token: tokenFromEmail(emailProvider, "VERIFY_EMAIL") } });
+      const verification = await app.inject({ method: "POST", url: "/api/auth/verify-email", payload: { token: tokenFromEmail(emailProvider, "VERIFY_EMAIL", email) } });
       expect(verification.statusCode).toBe(200);
       expect(verification.json().user.status).toBe("ACTIVE");
 
@@ -195,7 +195,7 @@ describe("Supabase PostgreSQL integration", () => {
       expect(unknownForgot.json()).toEqual({ accepted: true });
       expect(forgot.statusCode).toBe(200);
       expect(forgot.json()).toEqual({ accepted: true });
-      const resetToken = tokenFromEmail(emailProvider, "RESET_PASSWORD");
+      const resetToken = tokenFromEmail(emailProvider, "RESET_PASSWORD", email);
       const reset = await app.inject({ method: "POST", url: "/api/auth/reset-password", payload: { token: resetToken, password: replacementPassword } });
       expect(reset.statusCode).toBe(200);
       const reused = await app.inject({ method: "POST", url: "/api/auth/reset-password", payload: { token: resetToken, password: replacementPassword } });

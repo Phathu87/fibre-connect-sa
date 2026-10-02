@@ -8,12 +8,14 @@ Legend: `[Codex]` repository/validation work; `[External tool]` connected-accoun
 
 ## A - Git Checkpoint
 
-- [ ] `[Codex]` Confirm `main`, clean working tree, and expected candidate HEAD.
-- [ ] `[Codex]` Review all commits/diff from `origin/main` and run a secret scan.
-- [ ] `[Human]` Authorize a normal push of `main`; no force-push.
-- [ ] `[Codex or External tool]` Push the candidate and record the remote SHA.
-- [ ] `[Codex or External tool]` Wait for all three mandatory GitHub Actions jobs.
+- [x] `[Codex]` Confirm `main`, clean working tree, and expected candidate HEAD.
+- [x] `[Codex]` Review all commits/diff from `origin/main` and run a secret scan.
+- [x] `[Human]` Authorize a normal push of `main`; no force-push.
+- [x] `[Codex or External tool]` Push the candidate and record the remote SHA.
+- [x] `[Codex or External tool]` Wait for all three mandatory GitHub Actions jobs.
 - [ ] `[Human]` Approve the exact CI-green SHA as the Netlify candidate baseline.
+
+Checkpoint result: **BLOCKED**. CI run `#4` for `d9e2f5fdcd062036ffcf8b8a6fe323c3e5db3146` completed, but the mandatory PostgreSQL integration job failed. Phase 8.5 and deployment remain blocked pending an approved repair phase and a new exact-SHA green CI checkpoint.
 
 ## B - Supabase Environments
 
