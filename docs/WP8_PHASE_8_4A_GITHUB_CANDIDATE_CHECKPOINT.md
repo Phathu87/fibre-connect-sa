@@ -2,9 +2,9 @@
 
 Date: 2026-10-02
 
-Status: **BLOCKED**
+Final status after Phase 8.4A-R: **PASS**
 
-Classification: **GITHUB RELEASE CANDIDATE CHECKPOINT - BLOCKED**
+Classification: **GITHUB RELEASE CANDIDATE CHECKPOINT - PASS**
 
 Release mode: **PUBLIC DEMO**
 
@@ -92,7 +92,7 @@ Release mode: **PUBLIC DEMO**
 - Prisma commercial security gate remains open.
 - Live provider coverage remains unavailable and enquiries remain internal.
 
-## Decision
+## Initial Decision
 
 The candidate was pushed safely and local `main` is synchronized with `origin/main`, but the mandatory PostgreSQL integration job failed. Phase 8.4A is therefore **BLOCKED**, and the candidate is not approved for production deployment.
 
@@ -106,4 +106,12 @@ The candidate was pushed safely and local `main` is synchronized with `origin/ma
 - Full PostgreSQL integration result: 8/8 tests passed.
 - `npm run validate`: passed, including 63/63 standard tests and the production build.
 - `npm audit --audit-level=critical`: passed with no critical advisories; lower-severity findings remain deferred.
-- Repair commit and exact-SHA GitHub CI results will be recorded after the authorized push. The checkpoint remains **BLOCKED** until all three mandatory jobs pass for that SHA.
+- Repair commit: `fa6fde145de69c8902b5a0192c9f8dbda62de807` (`test: fix transactional email integration fixture`).
+- The repair was pushed normally to `origin/main`; no force push was used.
+- Exact-SHA GitHub CI: workflow `CI`, run `#5`, run ID `36982145284`.
+- Validate application: PASS.
+- PostgreSQL integration: PASS.
+- Dependency critical gate: PASS.
+- Overall CI: PASS.
+- Final checkpoint: **GITHUB RELEASE CANDIDATE CHECKPOINT - PASS**.
+- These post-CI evidence updates remain uncommitted so the validated candidate SHA is not changed.

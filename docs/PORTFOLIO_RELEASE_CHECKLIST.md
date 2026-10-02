@@ -15,19 +15,20 @@ Legend: `[Codex]` repository/validation work; `[External tool]` connected-accoun
 - [x] `[Codex or External tool]` Wait for all three mandatory GitHub Actions jobs.
 - [ ] `[Human]` Approve the exact CI-green SHA as the Netlify candidate baseline.
 
-Checkpoint result: **BLOCKED**. CI run `#4` for `d9e2f5fdcd062036ffcf8b8a6fe323c3e5db3146` completed, but the mandatory PostgreSQL integration job failed. Phase 8.5 and deployment remain blocked pending an approved repair phase and a new exact-SHA green CI checkpoint.
+Checkpoint result: **PASS** after the approved repair. CI run `#5` (ID `36982145284`) passed all three mandatory jobs for exact SHA `fa6fde145de69c8902b5a0192c9f8dbda62de807`. Human approval of this CI-green SHA remains outstanding before production provisioning or deployment.
 
 ## B - Supabase Environments
 
 - [ ] `[Human]` Confirm existing `fibreconnect-sa-dev` remains development-only.
-- [ ] `[Human]` Create a separate portfolio-production project; choose region/plan and enable account MFA.
-- [ ] `[Human]` Decide backup/PITR policy and confirm a restorable pre-migration checkpoint.
+- [ ] `[Human]` Create isolated `fibreconnect-sa-prod`; confirm organization, plan, MFA, PostgreSQL 17.x, and preferred `eu-west-1` region.
+- [ ] `[Human]` Decide Free/manual-export versus paid daily-backup/PITR policy, record RPO/RTO, and confirm a restorable pre-migration checkpoint.
 - [ ] `[Human]` Keep previews fail-closed, or create a separate preview/staging project before enabling preview APIs.
 - [ ] `[Human]` Obtain separate migration and pooled runtime credentials without exposing them to Codex/output.
-- [ ] `[Codex]` From the CI-green commit, apply checked-in migrations only after explicit migration approval.
-- [ ] `[Codex and Human]` Verify migration ledger, RLS, Security Advisor, Performance Advisor, SSL/network settings, and connection capacity.
-- [ ] `[Human]` Approve only the visibly labelled demo catalogue/coverage seed.
-- [ ] `[Codex]` Seed approved demo data and verify `liveProviderData=false` only in an authorized execution phase.
+- [ ] `[Codex]` From the CI-green commit, apply exactly five checked-in migrations through `DIRECT_URL` only after explicit migration approval and before Netlify traffic.
+- [ ] `[Codex and Human]` Verify PostgreSQL version, 21 public tables, six application enums, migration ledger, all-table RLS, zero unintended policies, Data API exposure, extensions, advisors, SSL/network settings, and connection capacity.
+- [ ] `[Human]` Approve only the visibly labelled demo catalogue/coverage seed: 3 providers, 4 networks, 5 packages, 3 areas, and 4 availability links.
+- [ ] `[Codex]` Seed approved demo data through the explicitly targeted production `DATABASE_URL`; verify exact counts and `liveProviderData=false` in an authorized execution phase.
+- [ ] `[Human and Codex]` Bootstrap one owner `ADMIN` only after normal registration/email verification, using a controlled, recorded promotion with no seeded credentials or public bootstrap endpoint.
 
 ## C - Resend
 

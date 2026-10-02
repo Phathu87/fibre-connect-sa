@@ -2,7 +2,7 @@
 
 Date: 2026-10-02
 
-Pre-push status: **LOCAL VALIDATION PASS - GITHUB CHECKPOINT PENDING**
+Final status: **PASS**
 
 ## Root Cause
 
@@ -56,7 +56,17 @@ The production build retained the previously deferred chunk-size warning. The au
 ## Git and GitHub Checkpoint
 
 - Superseded candidate: `d9e2f5fdcd062036ffcf8b8a6fe323c3e5db3146`
-- Repair commit: pending creation after this evidence and diff review.
-- Pushed SHA: pending.
-- Exact-SHA GitHub CI: pending.
-- Release checkpoint: **BLOCKED** until all mandatory GitHub jobs pass.
+- Repair commit: `fa6fde145de69c8902b5a0192c9f8dbda62de807` (`test: fix transactional email integration fixture`).
+- Pushed SHA: `fa6fde145de69c8902b5a0192c9f8dbda62de807`.
+- Force push: no.
+- GitHub workflow: `CI` run `#5`, run ID `36982145284`.
+
+| Mandatory GitHub job | Result |
+|---|---|
+| Validate application | PASS |
+| PostgreSQL integration | PASS |
+| Dependency critical gate | PASS |
+
+- Overall exact-SHA CI result: PASS.
+- Release checkpoint: **GITHUB RELEASE CANDIDATE CHECKPOINT - PASS**.
+- Post-CI evidence updates remain uncommitted to avoid creating another unvalidated SHA.
