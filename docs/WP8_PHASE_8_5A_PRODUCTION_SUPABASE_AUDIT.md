@@ -11,7 +11,9 @@ Audit boundary: repository inspection, official platform documentation, and read
 ## Recommended Production Project
 
 - Development remains the existing `fibreconnect-sa-dev` project and must not receive production traffic or credentials.
-- Create one isolated production project named `fibreconnect-sa-prod`.
+- Phase 8.5B created one isolated production project named `fibreconnect-sa-prod` (`qzjcoytfhpnlgmnptfzl`) in `Solarity Works Org`.
+- The production project is healthy on PostgreSQL `17.11` in West EU (Ireland), `eu-west-1`, on the Free plan with spend cap enabled.
+- The production and development project references are distinct; no production application migrations, tables, users, or seed data were created in Phase 8.5B.
 - Preview and branch contexts remain fail-closed until a separate non-production project is explicitly provisioned.
 - Development and production must not share project references, passwords, connection strings, backup lifecycle, or operator credentials.
 - The project owner must choose the Supabase organization, plan, spend controls, MFA posture, region, and backup policy during Phase 8.5B.
@@ -227,8 +229,7 @@ Collect and redact the following Phase 8.5C evidence:
 
 ## External Blockers
 
-- Human creation of the isolated Supabase production project.
-- Supabase organization, plan, spend control, MFA, region, and PostgreSQL-version decisions.
+- Supabase account MFA confirmation remains a human-owned security check; project creation, organization, plan, spend control, region, and PostgreSQL-version verification are complete.
 - Backup/PITR/RPO/RTO decision and restorable checkpoint evidence.
 - Production credentials entered by the human owner without exposure in repository, output, or chat.
 - Explicit migration and demo-seed authorization for Phase 8.5C.
@@ -238,4 +239,4 @@ Collect and redact the following Phase 8.5C evidence:
 
 ## Decision
 
-The repository and development evidence support a separate `fibreconnect-sa-prod` Supabase project on PostgreSQL 17.x in `eu-west-1`, with Fastify/Prisma as the sole data boundary, all public tables protected by RLS without browser policies, and only the approved demo seed. Phase 8.5A is complete. Infrastructure creation remains prohibited until explicit Phase 8.5B approval.
+The repository and development evidence support the separate `fibreconnect-sa-prod` Supabase project now verified on PostgreSQL `17.11` in `eu-west-1`, with Fastify/Prisma as the sole data boundary, all future public tables protected by RLS without browser policies, and only the approved demo seed. Phase 8.5A is complete, and the authorized Phase 8.5B project-creation checkpoint is recorded separately. Migration and seed execution remain prohibited until explicit Phase 8.5C approval and an approved pre-migration recovery checkpoint.
